@@ -9,13 +9,24 @@ $total = 0;
 $items = [];
 
 if (isset($_SESSION['carrito']) && count($_SESSION['carrito']) > 0) {
-    foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
-        $id = intval($id_producto);
-        $stmt = mysqli_prepare($conexion, "SELECT * FROM productos WHERE id_producto = ?");
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        if ($fila = mysqli_fetch_assoc($res)) {
+    $productIds = array_map('intval', array_keys($_SESSION['carrito']));
+    $listaIds = implode(',', $productIds);
+
+    if ($listaIds !== '') {
+        $sqlProductos = "SELECT * FROM productos WHERE id_producto IN ($listaIds)";
+        $resultadoProductos = mysqli_query($conexion, $sqlProductos);
+        $productos = [];
+
+        while ($fila = mysqli_fetch_assoc($resultadoProductos)) {
+            $productos[$fila['id_producto']] = $fila;
+        }
+
+        foreach ($productIds as $id_producto) {
+            if (!isset($productos[$id_producto])) {
+                continue;
+            }
+            $fila = $productos[$id_producto];
+            $cantidad = intval($_SESSION['carrito'][$id_producto]);
             $subtotal = $fila['precio'] * $cantidad;
             $total += $subtotal;
             $items[] = ['producto' => $fila, 'cantidad' => $cantidad, 'subtotal' => $subtotal];
@@ -30,11 +41,23 @@ $totalCarrito = isset($_SESSION['carrito']) ? array_sum($_SESSION['carrito']) : 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Carrito - Brisamar</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-height:100vh; }
+body {
+    background: radial-gradient(circle at top left, #2c1369, #130921 30%),
+                linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,.95));
+    font-family:'Segoe UI',sans-serif;
+    color:#fff;
+    min-height:100vh;
+}
+
+.page-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 28px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.35);
+}
 
 /* NAVBAR */
 .navbar-top {
@@ -133,6 +156,9 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
     <?php endif; ?>
 
     <div class="page-title"><i class="fas fa-shopping-bag" style="color:#c8102e;"></i> Mi Carrito</div>
+    <div style="margin-bottom:18px; color:rgba(255,255,255,.75); font-size:0.98rem;">
+        Has seleccionado <strong><?php echo $totalCarrito; ?></strong> producto<?php echo $totalCarrito === 1 ? '' : 's'; ?>.
+    </div>
 
     <?php if(empty($items)): ?>
     <div class="empty-cart">
@@ -196,6 +222,5 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
     <?php endif; ?>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

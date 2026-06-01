@@ -8,6 +8,11 @@
  * ============================================================
  */
 
+// Incluir configuración global si no se ha cargado aún
+if (!defined('HTTPS_ONLY')) {
+    require_once __DIR__ . '/../config/config.php';
+}
+
 // ──────────────────────────────────────────────────────────
 // INICIAR SESIÓN SEGURA
 // ──────────────────────────────────────────────────────────

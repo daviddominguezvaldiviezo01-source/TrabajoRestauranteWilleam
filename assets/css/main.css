@@ -18,7 +18,7 @@
 @import url('./reset.css');
 
 /* Tipografía */
-@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700;900&display=swap');
+/* Se usa fuente del sistema para evitar dependencias externas y acelerar la carga */
 
 /* Navbar */
 @import url('./navbar.css');

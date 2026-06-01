@@ -119,7 +119,7 @@ function tipo_badge($estado) {
                 <h1>Pedidos asignados</h1>
                 <p class="delivery-description">Revisa tus entregas, actualiza estados y visualiza el detalle completo de cada pedido asignado.</p>
             </div>
-            <a href="cliente/login.php" class="btn-delivery btn-delivery-secondary">Volver al cliente</a>
+            <a href="logout.php" class="btn-delivery btn-delivery-secondary">Cerrar sesión</a>
         </section>
 
         <section class="delivery-stats" aria-label="Resumen de pedidos">

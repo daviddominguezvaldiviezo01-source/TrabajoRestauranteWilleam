@@ -73,6 +73,13 @@ if(isset($_POST['registro'])){
 }
 
 if(isset($_GET['invitado'])){ $_SESSION['invitado']=true; header("Location: carrito.php"); exit(); }
+
+$boton_volver = 'index.php';
+$texto_volver = 'Volver al menú';
+if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'delivery') {
+    $boton_volver = '../delivery.php';
+    $texto_volver = 'Volver a Delivery';
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -80,7 +87,6 @@ if(isset($_GET['invitado'])){ $_SESSION['invitado']=true; header("Location: carr
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ingresar - Brisamar</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -211,7 +217,7 @@ body {
 <nav class="navbar-top">
     <div class="navbar-inner">
         <a href="index.php" class="logo"><i class="fas fa-fire" style="color:#ffcc00;"></i> Brisamar</a>
-        <a href="index.php" class="btn-nav-back"><i class="fas fa-arrow-left"></i> Volver al menú</a>
+        <a href="<?php echo $boton_volver; ?>" class="btn-nav-back"><i class="fas fa-arrow-left"></i> <?php echo $texto_volver; ?></a>
     </div>
 </nav>
 

@@ -1,6 +1,9 @@
 <?php
 session_start();
 include(__DIR__ . '/../conexion.php');
+if (!isset($conexion) || !$conexion) {
+    die('Error de conexión: no se pudo establecer conexión con la base de datos. Verifica config/config.php y que MySQL esté activo.');
+}
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:../cliente/login.php"); exit(); }
 
 $totalVentas     = mysqli_fetch_assoc(mysqli_query($conexion,"SELECT COALESCE(SUM(total),0) AS v FROM pedidos WHERE estado != 'cancelado'"))['v'];
@@ -11,7 +14,7 @@ $pedidosPendientes = mysqli_fetch_assoc(mysqli_query($conexion,"SELECT COUNT(*) 
 
 $resUltimos = mysqli_query($conexion,"SELECT vv.*, vv.cliente FROM vista_ventas vv ORDER BY vv.fecha DESC LIMIT 8");
 
-$resMeses = mysqli_query($conexion,"SELECT DATE_FORMAT(fecha,'%b') AS mes, SUM(total) AS total FROM pedidos WHERE fecha >= DATE_SUB(NOW(), INTERVAL 6 MONTH) GROUP BY MONTH(fecha), DATE_FORMAT(fecha,'%b') ORDER BY MONTH(fecha)");
+$resMeses = mysqli_query($conexion,"SELECT DATE_FORMAT(fecha,'%d %b') AS mes, SUM(total) AS total FROM pedidos WHERE fecha >= DATE_SUB(NOW(), INTERVAL 1 MONTH) GROUP BY DATE(fecha) ORDER BY DATE(fecha)");
 $meses=[]; $ventas_mes=[];
 while($row=mysqli_fetch_assoc($resMeses)){ $meses[]="'".$row['mes']."'"; $ventas_mes[]=floatval($row['total']); }
 $meses_js   = implode(',',$meses   ?: ["'Sin datos'"]);
@@ -77,7 +80,7 @@ $active_page = 'dashboard';
     <!-- GRÁFICOS -->
     <div class="charts-row">
         <div class="card-dark">
-            <h4><i class="fas fa-chart-line"></i> Ventas últimos 6 meses</h4>
+            <h4><i class="fas fa-chart-line"></i> Ventas último mes</h4>
             <canvas id="chartVentas" height="100"></canvas>
         </div>
         <div class="card-dark">

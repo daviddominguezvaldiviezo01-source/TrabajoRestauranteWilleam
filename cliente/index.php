@@ -33,11 +33,20 @@ if (isset($_GET['categoria']) && $_GET['categoria'] != "") {
             ORDER BY p.id_producto DESC";
 }
 
-$resultado       = mysqli_query($conexion, $sql);
-$resCat          = mysqli_query($conexion, "SELECT * FROM categorias ORDER BY nombre");
-$totalCarrito    = isset($_SESSION['carrito']) ? array_sum($_SESSION['carrito']) : 0;
-$resultadoFavoritos = mysqli_query($conexion, "SELECT p.*, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.favorito = 1 AND p.disponible = 1 LIMIT 8");
-$resultadoEstrellas = mysqli_query($conexion, "SELECT p.*, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.estrella = 1 AND p.disponible = 1 LIMIT 8");
+$resultado = mysqli_query($conexion, $sql);
+
+$categorias = [];
+$categoriaQuery = mysqli_query($conexion, "SELECT id_categoria, nombre FROM categorias ORDER BY nombre");
+if ($categoriaQuery) {
+    while ($cat = mysqli_fetch_assoc($categoriaQuery)) {
+        $categorias[] = $cat;
+    }
+    mysqli_free_result($categoriaQuery);
+}
+
+$totalCarrito = isset($_SESSION['carrito']) ? array_sum($_SESSION['carrito']) : 0;
+$resultadoFavoritos = mysqli_query($conexion, "SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, p.imagen, p.id_categoria, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.favorito = 1 AND p.disponible = 1 LIMIT 8");
+$resultadoEstrellas = mysqli_query($conexion, "SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.stock, p.imagen, p.id_categoria, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.estrella = 1 AND p.disponible = 1 LIMIT 8");
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -45,447 +54,8 @@ $resultadoEstrellas = mysqli_query($conexion, "SELECT p.*, c.nombre AS nombre_ca
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brisamar - Menú</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/index.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-    background: #111;
-    font-family: 'Segoe UI', sans-serif;
-    color: #fff;
-    overflow-x: hidden;
-}
-
-/* ── NAVBAR ── */
-.navbar-top {
-    background: #c8102e;
-    padding: 0 40px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: sticky;
-    top: 0;
-    z-index: 200;
-    box-shadow: 0 2px 12px rgba(0,0,0,.5);
-}
-
-.navbar-inner {
-    max-width: 1300px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-}
-
-.logo {
-    font-size: 24px;
-    font-weight: 900;
-    color: #fff;
-    text-decoration: none;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.logo img {
-    height: 38px;
-    object-fit: contain;
-}
-
-.nav-right {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.search-wrap {
-    position: relative;
-}
-
-.search-wrap input {
-    background: rgba(255,255,255,.15);
-    border: 1.5px solid rgba(255,255,255,.3);
-    border-radius: 30px;
-    color: #fff;
-    padding: 8px 18px 8px 38px;
-    font-size: 14px;
-    width: 220px;
-    transition: .3s;
-}
-
-.search-wrap input::placeholder { color: rgba(255,255,255,.6); }
-.search-wrap input:focus { outline: none; background: rgba(255,255,255,.25); width: 260px; }
-.search-wrap i {
-    position: absolute;
-    left: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255,255,255,.7);
-    font-size: 13px;
-}
-
-.btn-cart {
-    background: #fff;
-    color: #c8102e;
-    border: none;
-    border-radius: 30px;
-    padding: 8px 20px;
-    font-weight: 700;
-    font-size: 14px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    position: relative;
-    transition: .2s;
-}
-.btn-cart:hover { background: #f0f0f0; color: #c8102e; }
-
-.cart-badge {
-    position: absolute;
-    top: -7px; right: -7px;
-    background: #111;
-    color: #fff;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    font-size: 11px;
-    font-weight: 900;
-    display: flex; align-items: center; justify-content: center;
-}
-
-.btn-nav-user {
-    color: #fff;
-    border: 1.5px solid rgba(255,255,255,.5);
-    border-radius: 30px;
-    padding: 7px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    text-decoration: none;
-    transition: .2s;
-}
-.btn-nav-user:hover { background: rgba(255,255,255,.15); color: #fff; }
-.btn-nav-exit { border-color: rgba(255,100,100,.6); color: #ff8080; }
-.btn-nav-exit:hover { background: rgba(200,16,46,.3); color: #fff; }
-
-/* ── HERO BANNER ── */
-.hero-banner {
-    position: relative;
-    height: 380px;
-    overflow: hidden;
-    background: #1a0a0a;
-}
-.hero-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: .45;
-}
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,.1) 0%, rgba(17,17,17,1) 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
-}
-.hero-overlay h1 {
-    font-size: 3.2rem;
-    font-weight: 900;
-    color: #fff;
-    text-shadow: 0 2px 10px rgba(0,0,0,.6);
-    margin-bottom: 10px;
-}
-.hero-overlay p {
-    font-size: 1.1rem;
-    color: rgba(255,255,255,.8);
-    margin-bottom: 24px;
-}
-.btn-hero {
-    background: #c8102e;
-    color: #fff;
-    padding: 13px 36px;
-    border-radius: 30px;
-    font-weight: 700;
-    font-size: 15px;
-    text-decoration: none;
-    transition: .2s;
-    border: none;
-}
-.btn-hero:hover { background: #a50d26; color: #fff; transform: translateY(-2px); }
-
-/* ── TABS DE CATEGORÍAS ── */
-.cats-bar {
-    background: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-    position: sticky;
-    top: 64px;
-    z-index: 100;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.cats-bar::-webkit-scrollbar { display: none; }
-
-.cats-inner {
-    display: flex;
-    gap: 0;
-    max-width: 1300px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-.cat-tab {
-    color: rgba(255,255,255,.55);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    padding: 16px 22px;
-    white-space: nowrap;
-    border-bottom: 3px solid transparent;
-    transition: .2s;
-    letter-spacing: .3px;
-}
-.cat-tab:hover { color: #fff; }
-.cat-tab.active {
-    color: #fff;
-    border-bottom-color: #c8102e;
-}
-
-/* ── CONTENIDO PRINCIPAL ── */
-.page-wrap {
-    max-width: 1300px;
-    margin: 0 auto;
-    padding: 40px 20px 60px;
-}
-
-/* ── SECCIÓN TÍTULO ── */
-.sec-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-}
-.sec-header h2 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #fff;
-}
-.sec-divider {
-    flex: 1;
-    height: 1px;
-    background: #2a2a2a;
-}
-
-/* ── GRID DE PRODUCTOS ── */
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 20px;
-    margin-bottom: 50px;
-}
-
-/* ── TARJETA ── */
-.prod-card {
-    background: #1e1e1e;
-    border-radius: 14px;
-    overflow: hidden;
-    transition: transform .25s, box-shadow .25s;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #2a2a2a;
-}
-.prod-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 30px rgba(0,0,0,.5);
-    border-color: #3a3a3a;
-}
-
-.prod-img-wrap {
-    position: relative;
-    height: 200px;
-    background: #2a2a2a;
-    overflow: hidden;
-}
-.prod-img-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform .4s;
-}
-.prod-card:hover .prod-img-wrap img { transform: scale(1.06); }
-
-.prod-img-fallback {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #2a2a2a;
-    color: rgba(255,255,255,.3);
-    font-size: 3rem;
-}
-
-.prod-badge {
-    position: absolute;
-    top: 10px; left: 10px;
-    background: #c8102e;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 20px;
-    letter-spacing: .5px;
-}
-
-.prod-body {
-    padding: 16px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.prod-cat {
-    font-size: 11px;
-    font-weight: 700;
-    color: #c8102e;
-    text-transform: uppercase;
-    letter-spacing: .8px;
-    margin-bottom: 6px;
-}
-
-.prod-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 6px;
-    line-height: 1.3;
-}
-
-.prod-desc {
-    font-size: 0.82rem;
-    color: rgba(255,255,255,.45);
-    margin-bottom: 14px;
-    flex: 1;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.prod-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.prod-price {
-    font-size: 1.3rem;
-    font-weight: 900;
-    color: #fff;
-}
-.prod-price span {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: rgba(255,255,255,.5);
-    margin-right: 2px;
-}
-
-.btn-add {
-    background: #c8102e;
-    color: #fff;
-    border: none;
-    border-radius: 30px;
-    padding: 9px 18px;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: .2s;
-    white-space: nowrap;
-}
-.btn-add:hover { background: #a50d26; color: #fff; }
-.btn-add:disabled, .btn-add.disabled {
-    background: #333;
-    color: rgba(255,255,255,.3);
-    cursor: not-allowed;
-}
-
-/* ── EMPTY STATE ── */
-.empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 80px 20px;
-    color: rgba(255,255,255,.3);
-}
-.empty-state i { font-size: 4rem; margin-bottom: 16px; display: block; }
-.empty-state h3 { font-size: 1.2rem; margin-bottom: 16px; }
-
-/* ── TOAST ── */
-.toast-msg {
-    position: fixed;
-    top: 80px; right: 20px;
-    background: #1e1e1e;
-    border-left: 4px solid #c8102e;
-    color: #fff;
-    padding: 14px 20px;
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    z-index: 9999;
-    animation: slideIn .3s ease;
-}
-@keyframes slideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
-
-/* ── FOOTER ── */
-footer {
-    background: #0d0d0d;
-    border-top: 1px solid #222;
-    padding: 40px 20px 20px;
-    color: rgba(255,255,255,.5);
-}
-.footer-inner {
-    max-width: 1300px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-    margin-bottom: 30px;
-}
-.footer-inner h5 { color: #fff; font-weight: 700; margin-bottom: 12px; font-size: 14px; }
-.footer-inner a { color: rgba(255,255,255,.45); text-decoration: none; font-size: 13px; display: block; margin-bottom: 8px; transition: .2s; }
-.footer-inner a:hover { color: #c8102e; }
-.footer-bottom {
-    max-width: 1300px;
-    margin: 0 auto;
-    border-top: 1px solid #222;
-    padding-top: 18px;
-    text-align: center;
-    font-size: 13px;
-}
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-    .navbar-top { padding: 0 16px; }
-    .navbar-inner { gap: 10px; flex-wrap: wrap; }
-    .hero-overlay h1 { font-size: 2rem; }
-    .search-wrap input { width: 140px; }
-    .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-    .prod-img-wrap { height: 150px; }
-}
-</style>
 </head>
 <body>
 
@@ -499,7 +69,7 @@ footer {
     <div class="nav-right">
         <div class="search-wrap">
             <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Buscar en el menú..." onkeyup="filtrarProductos()">
+            <input type="text" id="searchInput" placeholder="Buscar en el menú...">
         </div>
 
         <a href="carrito.php" class="btn-cart">
@@ -542,15 +112,12 @@ footer {
         <a href="index.php" class="cat-tab <?php echo ($id_categoria == 0) ? 'active' : ''; ?>">
             Todos
         </a>
-        <?php
-        $resCat2 = mysqli_query($conexion, "SELECT * FROM categorias ORDER BY nombre");
-        while($cat = mysqli_fetch_assoc($resCat2)):
-        ?>
+        <?php foreach ($categorias as $cat): ?>
         <a href="?categoria=<?php echo $cat['id_categoria']; ?>"
            class="cat-tab <?php echo ($id_categoria == $cat['id_categoria']) ? 'active' : ''; ?>">
             <?php echo htmlspecialchars($cat['nombre']); ?>
         </a>
-        <?php endwhile; ?>
+        <?php endforeach; ?>
     </div>
 </div>
 
@@ -560,7 +127,6 @@ footer {
     <i class="fas fa-check-circle" style="color:#c8102e;"></i>
     <span><?php echo $_SESSION['mensaje']; unset($_SESSION['mensaje']); ?></span>
 </div>
-<script>setTimeout(()=>{ const t=document.getElementById('toastMsg'); if(t) t.style.display='none'; }, 3000);</script>
 <?php endif; ?>
 
 <!-- CONTENIDO -->
@@ -732,15 +298,6 @@ footer {
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-function filtrarProductos() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll('.producto-item').forEach(el => {
-        const n = el.querySelector('[data-nombre]')?.getAttribute('data-nombre') || '';
-        el.style.display = n.includes(q) ? '' : 'none';
-    });
-}
-</script>
+<script src="../assets/js/index.js" defer></script>
 </body>
 </html>
