@@ -1,0 +1,289 @@
+/**
+ * ============================================================
+ * ARCHIVO: assets/css/navbar.css
+ * ============================================================
+ * DESCRIPCIÓN: Estilos para la navegación principal
+ * Navbar sticky con logo, búsqueda y carrito
+ * ============================================================
+ */
+
+/* ──────────────────────────────────────────────────────────
+   NAVBAR PRINCIPAL
+   ────────────────────────────────────────────────────────── */
+
+.navbar-top {
+    /* Color de fondo */
+    background: var(--color-primary);
+    /* Padding horizontal */
+    padding: 0 40px;
+    /* Altura fija */
+    height: 64px;
+    /* Display flex para alinear */
+    display: flex;
+    /* Alinear items al centro */
+    align-items: center;
+    /* Justificar al centro */
+    justify-content: center;
+    /* Sticky en top */
+    position: sticky;
+    top: 0;
+    /* Z-index para que esté encima */
+    z-index: var(--z-navbar);
+    /* Sombra */
+    box-shadow: var(--shadow-sm);
+}
+
+/* ──────────────────────────────────────────────────────────
+   CONTENEDOR NAVBAR
+   ────────────────────────────────────────────────────────── */
+
+.navbar-inner {
+    /* Ancho máximo */
+    max-width: 1300px;
+    /* Ancho 100% */
+    width: 100%;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Justificar espacio entre */
+    justify-content: space-between;
+    /* Gap entre items */
+    gap: 20px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   LOGO
+   ────────────────────────────────────────────────────────── */
+
+.logo {
+    /* Tamaño de fuente */
+    font-size: var(--font-size-xl);
+    /* Font weight */
+    font-weight: 900;
+    /* Color blanco */
+    color: var(--color-text-primary);
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Letter spacing */
+    letter-spacing: 1px;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap entre elementos */
+    gap: 10px;
+    /* Sin selección */
+    user-select: none;
+}
+
+.logo img {
+    /* Alto de imagen */
+    height: 38px;
+    /* Ajustar proporción */
+    object-fit: contain;
+}
+
+.logo:hover {
+    /* Color en hover */
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ──────────────────────────────────────────────────────────
+   LADO DERECHO NAVBAR
+   ────────────────────────────────────────────────────────── */
+
+.nav-right {
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap entre items */
+    gap: 14px;
+    /* Flex wrap para responsive */
+    flex-wrap: wrap;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BÚSQUEDA
+   ────────────────────────────────────────────────────────── */
+
+.search-wrap {
+    /* Posición relativa */
+    position: relative;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+}
+
+.search-wrap input {
+    /* Fondo semi-transparente */
+    background: rgba(255, 255, 255, 0.15);
+    /* Border */
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Color texto */
+    color: var(--color-text-primary);
+    /* Padding */
+    padding: 8px 18px 8px 38px;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Ancho */
+    width: 220px;
+    /* Transición */
+    transition: width var(--transition-normal), 
+                background var(--transition-normal);
+}
+
+.search-wrap input::placeholder {
+    /* Color placeholder */
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-wrap input:focus {
+    /* Sin outline */
+    outline: none;
+    /* Fondo más opaco */
+    background: rgba(255, 255, 255, 0.25);
+    /* Ancho mayor */
+    width: 260px;
+}
+
+.search-wrap i {
+    /* Posición absoluta */
+    position: absolute;
+    /* Left */
+    left: 13px;
+    /* Top 50% */
+    top: 50%;
+    /* Transformar al centro */
+    transform: translateY(-50%);
+    /* Color */
+    color: rgba(255, 255, 255, 0.7);
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Puntero */
+    pointer-events: none;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÓN CARRITO
+   ────────────────────────────────────────────────────────── */
+
+.btn-cart {
+    /* Fondo blanco */
+    background: var(--color-text-primary);
+    /* Color texto rojo */
+    color: var(--color-primary);
+    /* Sin border */
+    border: none;
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Padding */
+    padding: 8px 20px;
+    /* Font weight */
+    font-weight: 700;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap */
+    gap: 7px;
+    /* Posición relativa */
+    position: relative;
+    /* Transición */
+    transition: background var(--transition-fast);
+    /* Cursor */
+    cursor: pointer;
+}
+
+.btn-cart:hover {
+    /* Background en hover */
+    background: #f0f0f0;
+    /* Color en hover */
+    color: var(--color-primary);
+}
+
+/* ──────────────────────────────────────────────────────────
+   BADGE DEL CARRITO (número de items)
+   ────────────────────────────────────────────────────────── */
+
+.cart-badge {
+    /* Posición absoluta */
+    position: absolute;
+    /* Top derecha */
+    top: -7px;
+    right: -7px;
+    /* Fondo oscuro */
+    background: var(--color-bg-main);
+    /* Color texto */
+    color: var(--color-text-primary);
+    /* Ancho y alto */
+    width: 22px;
+    height: 22px;
+    /* Border radius circular */
+    border-radius: 50%;
+    /* Font size pequeño */
+    font-size: 11px;
+    /* Font weight */
+    font-weight: 900;
+    /* Display flex */
+    display: flex;
+    /* Alinear y justificar */
+    align-items: center;
+    justify-content: center;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÓN USUARIO
+   ────────────────────────────────────────────────────────── */
+
+.btn-nav-user {
+    /* Color texto */
+    color: var(--color-text-primary);
+    /* Border */
+    border: 1.5px solid rgba(255, 255, 255, 0.5);
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Padding */
+    padding: 7px 16px;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Font weight */
+    font-weight: 600;
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Transición */
+    transition: background var(--transition-fast);
+}
+
+.btn-nav-user:hover {
+    /* Background en hover */
+    background: rgba(255, 255, 255, 0.15);
+    /* Color */
+    color: var(--color-text-primary);
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÓN SALIR
+   ────────────────────────────────────────────────────────── */
+
+.btn-nav-exit {
+    /* Border color rojo */
+    border-color: rgba(255, 100, 100, 0.6);
+    /* Color rojo claro */
+    color: #ff8080;
+}
+
+.btn-nav-exit:hover {
+    /* Background rojo */
+    background: rgba(200, 16, 46, 0.3);
+    /* Color blanco */
+    color: var(--color-text-primary);
+}

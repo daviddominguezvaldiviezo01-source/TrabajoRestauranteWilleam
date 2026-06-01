@@ -1,0 +1,166 @@
+# ============================================================
+# ARCHIVO: .htaccess
+# ============================================================
+# DESCRIPCIÓN: Configuración de seguridad del servidor Apache
+# Protege contra ataques comunes y optimiza el rendimiento
+# ============================================================
+
+# ──────────────────────────────────────────────────────────
+# ENABLE REWRITE ENGINE (para URL amigables)
+# ──────────────────────────────────────────────────────────
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /RESTAURANTE2/
+    
+    # Redirigir a index.php para archivos no existentes
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+</IfModule>
+
+# ──────────────────────────────────────────────────────────
+# DESHABILITAR LISTADO DE DIRECTORIO (Seguridad)
+# ──────────────────────────────────────────────────────────
+
+Options -Indexes
+
+# ──────────────────────────────────────────────────────────
+# DESHABILITAR EJECUCIÓN DE SCRIPTS EN DIRECTORIOS
+# ──────────────────────────────────────────────────────────
+
+# Nota: <Directory> no está permitido en .htaccess en muchos entornos Apache.
+# Si necesitas esta protección, configura estas reglas en el archivo httpd.conf o en un VirtualHost.
+
+# ──────────────────────────────────────────────────────────
+# BLOQUEAR ACCESO A ARCHIVOS CONFIDENCIALES
+# ──────────────────────────────────────────────────────────
+
+# Bloquear acceso a archivos de configuración
+<FilesMatch "\.(env|config|sql|sqlite|db)$">
+    Deny from all
+</FilesMatch>
+
+# Bloquear acceso a archivos ocultos y backup
+<FilesMatch "^\.">
+    Deny from all
+</FilesMatch>
+
+# Bloquear acceso a .git y directorios sensibles
+# <DirectoryMatch> no está permitido en .htaccess en Apache estándar.
+# Si se necesita, debe moverse al httpd.conf o configuración del host.
+
+# ──────────────────────────────────────────────────────────
+# DESHABILITAR MÉTODOS HTTP NO PERMITIDOS
+# ──────────────────────────────────────────────────────────
+
+# Solo permitir GET, POST, HEAD
+<LimitExcept GET POST HEAD>
+    Deny from all
+</LimitExcept>
+
+# ──────────────────────────────────────────────────────────
+# COMPRESIÓN DE CONTENIDO (Rendimiento)
+# ──────────────────────────────────────────────────────────
+
+<IfModule mod_deflate.c>
+    # Comprimir HTML, CSS, JavaScript
+    AddOutputFilterByType DEFLATE text/html text/plain
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE text/xml application/xml application/rss+xml
+    AddOutputFilterByType DEFLATE application/json
+    
+    # Excluir imágenes de compresión (ya están comprimidas)
+    SetEnvIfNoCase Request_URI "\.(?:gif|jpg|jpeg|png|swf|woff|woff2)$" no-gzip dont-vary
+</IfModule>
+
+# ──────────────────────────────────────────────────────────
+# CACHÉ DEL NAVEGADOR (Rendimiento)
+# ──────────────────────────────────────────────────────────
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Imágenes (1 año)
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    
+    # CSS y JavaScript (1 mes)
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    
+    # Fuentes (1 año)
+    ExpiresByType font/ttf "access plus 1 year"
+    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    
+    # HTML (1 día)
+    ExpiresByType text/html "access plus 1 day"
+    
+    # Default 2 días
+    ExpiresDefault "access plus 2 days"
+</IfModule>
+
+# ──────────────────────────────────────────────────────────
+# HEADERS DE SEGURIDAD
+# ──────────────────────────────────────────────────────────
+
+<IfModule mod_headers.c>
+    
+    # X-Frame-Options: Prevenir clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # X-Content-Type-Options: Prevenir MIME type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # X-XSS-Protection: Protección contra XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Content-Security-Policy: Política de seguridad
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https:; font-src 'self' https://cdnjs.cloudflare.com data:;"
+    
+    # Referrer-Policy
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Feature-Policy (Permissions-Policy)
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    
+</IfModule>
+
+# ──────────────────────────────────────────────────────────
+# PREVENIR HOTLINKING (Proteger imágenes)
+# ──────────────────────────────────────────────────────────
+
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    SetEnvIf Request_URI "^" isImage=1
+    SetEnvIf HTTP_REFERER "^$" isImage=1
+    SetEnvIf HTTP_REFERER "^https?://(.+\.)?restaurante2" isImage=0
+    
+    Order allow,deny
+    Allow from env=!isImage
+</FilesMatch>
+
+# ──────────────────────────────────────────────────────────
+# CHARSET UTF-8
+# ──────────────────────────────────────────────────────────
+
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .css .js .xml .json
+
+# ──────────────────────────────────────────────────────────
+# TIPOS MIME COMUNES
+# ──────────────────────────────────────────────────────────
+
+AddType text/html .html
+AddType text/css .css
+AddType application/javascript .js
+AddType application/json .json
+AddType image/svg+xml .svg
+AddType application/font-woff .woff
+AddType application/font-woff2 .woff2

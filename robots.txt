@@ -1,0 +1,79 @@
+# ============================================================
+# ARCHIVO: robots.txt
+# ============================================================
+# DESCRIPCIÓN: Instrucciones para motores de búsqueda
+# Controla qué partes del sitio se indexan
+# Para SEO - https://www.robotstxt.org/
+# ============================================================
+
+# ──────────────────────────────────────────────────────────
+# REGLAS GLOBALES (Todos los bots)
+# ──────────────────────────────────────────────────────────
+
+User-agent: *
+
+# ──────────────────────────────────────────────────────────
+# PERMITIR ACCESO A CONTENIDO IMPORTANTE
+# ──────────────────────────────────────────────────────────
+
+# Permitir acceso a carpeta de assets
+Allow: /RESTAURANTE2/assets/
+
+# Permitir acceso a cliente
+Allow: /RESTAURANTE2/cliente/
+
+# ──────────────────────────────────────────────────────────
+# DESHABILITAR ACCESO A DIRECTORIOS PRIVADOS
+# ──────────────────────────────────────────────────────────
+
+# No indexar área de administración
+Disallow: /RESTAURANTE2/admin/
+
+# No indexar área de delivery
+Disallow: /RESTAURANTE2/delivery.php
+
+# No indexar carpeta de configuración
+Disallow: /RESTAURANTE2/config/
+
+# No indexar carpeta de includes
+Disallow: /RESTAURANTE2/includes/
+
+# No indexar carpeta de tools
+Disallow: /RESTAURANTE2/tools/
+
+# No indexar carpeta de logs
+Disallow: /RESTAURANTE2/logs/
+
+# ──────────────────────────────────────────────────────────
+# NO INDEXAR ARCHIVOS DE PROCESAMIENTO
+# ──────────────────────────────────────────────────────────
+
+Disallow: /RESTAURANTE2/validar.php
+Disallow: /RESTAURANTE2/logout.php
+Disallow: /RESTAURANTE2/cliente/agregar_carrito.php
+Disallow: /RESTAURANTE2/cliente/eliminar_carrito.php
+Disallow: /RESTAURANTE2/cliente/procesar_pedido.php
+
+# ──────────────────────────────────────────────────────────
+# PARÁMETROS DE BÚSQUEDA (Evitar duplicados)
+# ──────────────────────────────────────────────────────────
+
+Disallow: /*?categoria=*
+Disallow: /*?page=*
+Disallow: /*?sort=*
+
+# ──────────────────────────────────────────────────────────
+# VELOCIDAD DE RASTREO
+# ──────────────────────────────────────────────────────────
+
+# Dar tiempo al servidor entre requests (300ms)
+Crawl-delay: 1
+
+# Máximo de conexiones simultáneas
+Request-rate: 30/1m
+
+# ──────────────────────────────────────────────────────────
+# SITEMAP
+# ──────────────────────────────────────────────────────────
+
+Sitemap: http://localhost/RESTAURANTE2/sitemap.xml

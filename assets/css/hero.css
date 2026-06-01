@@ -1,0 +1,215 @@
+/**
+ * ============================================================
+ * ARCHIVO: assets/css/hero.css
+ * ============================================================
+ * DESCRIPCIÓN: Estilos para banner hero (sección destacada)
+ * Imagen de fondo con overlay y CTA
+ * ============================================================
+ */
+
+/* ──────────────────────────────────────────────────────────
+   BANNER HERO
+   ────────────────────────────────────────────────────────── */
+
+.hero-banner {
+    /* Posición relativa */
+    position: relative;
+    /* Alto fijo */
+    height: 380px;
+    /* Overflow hidden */
+    overflow: hidden;
+    /* Fondo oscuro */
+    background: var(--color-bg-secondary);
+}
+
+.hero-banner img {
+    /* Ancho 100% */
+    width: 100%;
+    /* Alto 100% */
+    height: 100%;
+    /* Ajustar proporción */
+    object-fit: cover;
+    /* Opacidad */
+    opacity: 0.45;
+}
+
+/* ──────────────────────────────────────────────────────────
+   OVERLAY DEL HERO
+   ────────────────────────────────────────────────────────── */
+
+.hero-overlay {
+    /* Posición absoluta cubriendo todo */
+    position: absolute;
+    inset: 0;
+    /* Gradiente oscuro */
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.1) 0%,
+        rgba(17, 17, 17, 1) 100%
+    );
+    /* Display flex */
+    display: flex;
+    /* Dirección columna */
+    flex-direction: column;
+    /* Alinear items al centro */
+    align-items: center;
+    /* Justificar al centro */
+    justify-content: center;
+    /* Texto al centro */
+    text-align: center;
+    /* Padding */
+    padding: 20px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   TÍTULO HERO
+   ────────────────────────────────────────────────────────── */
+
+.hero-overlay h1 {
+    /* Font size grande */
+    font-size: var(--font-size-h1);
+    /* Font weight */
+    font-weight: 900;
+    /* Color blanco */
+    color: var(--color-text-primary);
+    /* Text shadow */
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    /* Margin bottom */
+    margin-bottom: 10px;
+    /* Line height */
+    line-height: 1.2;
+}
+
+/* ──────────────────────────────────────────────────────────
+   SUBTÍTULO HERO
+   ────────────────────────────────────────────────────────── */
+
+.hero-overlay p {
+    /* Font size */
+    font-size: 1.1rem;
+    /* Color */
+    color: rgba(255, 255, 255, 0.8);
+    /* Margin bottom */
+    margin-bottom: 24px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÓN HERO (CTA)
+   ────────────────────────────────────────────────────────── */
+
+.btn-hero {
+    /* Background color primario */
+    background: var(--color-primary);
+    /* Color texto */
+    color: var(--color-text-primary);
+    /* Padding */
+    padding: 13px 36px;
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Font weight */
+    font-weight: 700;
+    /* Font size */
+    font-size: 15px;
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Transición */
+    transition: background var(--transition-fast), 
+                transform var(--transition-fast);
+    /* Border */
+    border: none;
+    /* Display inline block */
+    display: inline-block;
+    /* Cursor */
+    cursor: pointer;
+}
+
+.btn-hero:hover {
+    /* Background más oscuro */
+    background: var(--color-primary-dark);
+    /* Color en hover */
+    color: var(--color-text-primary);
+    /* Transform up */
+    transform: translateY(-2px);
+    /* Sombra */
+    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+}
+
+.btn-hero:active {
+    /* Transform down */
+    transform: translateY(0);
+}
+
+/* ──────────────────────────────────────────────────────────
+   CATEGORÍAS BAR (debajo del hero)
+   ────────────────────────────────────────────────────────── */
+
+.cats-bar {
+    /* Fondo */
+    background: var(--color-bg-secondary);
+    /* Border bottom */
+    border-bottom: 1px solid var(--color-border);
+    /* Posición sticky */
+    position: sticky;
+    top: 64px;
+    /* Z-index */
+    z-index: var(--z-dropdown);
+    /* Overflow x auto */
+    overflow-x: auto;
+    /* Scrollbar ancho none */
+    scrollbar-width: none;
+}
+
+.cats-bar::-webkit-scrollbar {
+    /* Display none */
+    display: none;
+}
+
+.cats-inner {
+    /* Display flex */
+    display: flex;
+    /* Gap */
+    gap: 0;
+    /* Ancho máximo */
+    max-width: 1300px;
+    /* Margin auto */
+    margin: 0 auto;
+    /* Padding */
+    padding: 0 20px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   PESTAÑA DE CATEGORÍA
+   ────────────────────────────────────────────────────────── */
+
+.cat-tab {
+    /* Color */
+    color: var(--color-text-secondary);
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Font weight */
+    font-weight: 600;
+    /* Padding */
+    padding: 16px 22px;
+    /* White space nowrap */
+    white-space: nowrap;
+    /* Border bottom */
+    border-bottom: 3px solid transparent;
+    /* Transición */
+    transition: color var(--transition-fast);
+    /* Letter spacing */
+    letter-spacing: 0.3px;
+}
+
+.cat-tab:hover {
+    /* Color en hover */
+    color: var(--color-text-primary);
+}
+
+.cat-tab.active {
+    /* Color activo */
+    color: var(--color-text-primary);
+    /* Border bottom color */
+    border-bottom-color: var(--color-primary);
+}

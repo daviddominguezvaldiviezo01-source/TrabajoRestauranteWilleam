@@ -1,0 +1,130 @@
+/**
+ * ============================================================
+ * ARCHIVO: assets/css/variables.css
+ * ============================================================
+ * DESCRIPCIÓN: Variables CSS y colores globales
+ * Centraliza todos los colores y estilos reutilizables
+ * para fácil mantenimiento
+ * ============================================================
+ */
+
+:root {
+    /* ──────────────────────────────────────────────────────
+       COLORES PRINCIPALES
+       ────────────────────────────────────────────────────── */
+    
+    /** Color primario - Rojo de la marca */
+    --color-primary: #c8102e;
+    
+    /** Color primario oscuro - Hover state */
+    --color-primary-dark: #a50d26;
+    
+    /** Fondo principal - Negro oscuro */
+    --color-bg-main: #111;
+    
+    /** Fondo secundario - Gris muy oscuro */
+    --color-bg-secondary: #1a1a1a;
+    
+    /** Fondo terciario */
+    --color-bg-tertiary: #161616;
+    
+    /** Fondo claro */
+    --color-bg-light: #1e1e1e;
+    
+    /** Fondo divisor */
+    --color-border: #2a2a2a;
+    
+    /** Texto principal - Blanco */
+    --color-text-primary: #fff;
+    
+    /** Texto secundario - Gris claro */
+    --color-text-secondary: rgba(255, 255, 255, 0.55);
+    
+    /** Texto terciario - Gris más claro */
+    --color-text-tertiary: rgba(255, 255, 255, 0.35);
+    
+    /** Texto muy claro - Para placeholders */
+    --color-text-light: rgba(255, 255, 255, 0.2);
+    
+    /* ──────────────────────────────────────────────────────
+       TIPOGRAFÍA
+       ────────────────────────────────────────────────────── */
+    
+    /** Familia de fuente principal */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    /** Tamaño base */
+    --font-size-base: 14px;
+    
+    /** Tamaño pequeño */
+    --font-size-sm: 12px;
+    
+    /** Tamaño mediano */
+    --font-size-md: 15px;
+    
+    /** Tamaño grande */
+    --font-size-lg: 18px;
+    
+    /** Tamaño extra grande */
+    --font-size-xl: 24px;
+    
+    /** Tamaño heading 1 */
+    --font-size-h1: 3.2rem;
+    
+    /** Tamaño heading 2 */
+    --font-size-h2: 1.5rem;
+    
+    /* ──────────────────────────────────────────────────────
+       ESPACIADO
+       ────────────────────────────────────────────────────── */
+    
+    /** Espaciado base */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 28px;
+    --spacing-4xl: 40px;
+    
+    /* ──────────────────────────────────────────────────────
+       BORDER RADIUS
+       ────────────────────────────────────────────────────── */
+    
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 14px;
+    --radius-full: 30px;
+    
+    /* ──────────────────────────────────────────────────────
+       SOMBRAS
+       ────────────────────────────────────────────────────── */
+    
+    /** Sombra pequeña */
+    --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.5);
+    
+    /** Sombra mediana */
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+    
+    /** Sombra grande */
+    --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.5);
+    
+    /* ──────────────────────────────────────────────────────
+       TRANSICIONES
+       ────────────────────────────────────────────────────── */
+    
+    --transition-fast: 0.2s;
+    --transition-normal: 0.3s;
+    --transition-slow: 0.4s;
+    
+    /* ──────────────────────────────────────────────────────
+       Z-INDEX
+       ────────────────────────────────────────────────────── */
+    
+    --z-dropdown: 100;
+    --z-navbar: 200;
+    --z-modal: 9000;
+    --z-toast: 9999;
+}

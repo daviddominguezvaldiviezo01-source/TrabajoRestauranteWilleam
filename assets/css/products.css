@@ -1,0 +1,359 @@
+/**
+ * ============================================================
+ * ARCHIVO: assets/css/products.css
+ * ============================================================
+ * DESCRIPCIÓN: Estilos para grid de productos y tarjetas
+ * Diseño responsive con hover effects
+ * ============================================================
+ */
+
+/* ──────────────────────────────────────────────────────────
+   CONTENEDOR DE PÁGINA
+   ────────────────────────────────────────────────────────── */
+
+.page-wrap {
+    /* Ancho máximo */
+    max-width: 1300px;
+    /* Margin auto */
+    margin: 0 auto;
+    /* Padding */
+    padding: 40px 20px 60px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   HEADER DE SECCIÓN
+   ────────────────────────────────────────────────────────── */
+
+.sec-header {
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap */
+    gap: 12px;
+    /* Margin bottom */
+    margin-bottom: 28px;
+}
+
+.sec-header h2 {
+    /* Font size */
+    font-size: var(--font-size-h2);
+    /* Font weight */
+    font-weight: 800;
+    /* Color */
+    color: var(--color-text-primary);
+    /* No margin */
+    margin: 0;
+}
+
+.sec-divider {
+    /* Flex 1 */
+    flex: 1;
+    /* Height */
+    height: 1px;
+    /* Background */
+    background: var(--color-border);
+}
+
+/* ──────────────────────────────────────────────────────────
+   GRID DE PRODUCTOS
+   ────────────────────────────────────────────────────────── */
+
+.products-grid {
+    /* Display grid */
+    display: grid;
+    /* Grid template columns responsivo */
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    /* Gap */
+    gap: 20px;
+    /* Margin bottom */
+    margin-bottom: 50px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   TARJETA DE PRODUCTO
+   ────────────────────────────────────────────────────────── */
+
+.prod-card {
+    /* Background */
+    background: var(--color-bg-light);
+    /* Border radius */
+    border-radius: var(--radius-xl);
+    /* Overflow hidden */
+    overflow: hidden;
+    /* Transición */
+    transition: transform var(--transition-fast), 
+                box-shadow var(--transition-fast);
+    /* Display flex */
+    display: flex;
+    /* Flex direction */
+    flex-direction: column;
+    /* Border */
+    border: 1px solid var(--color-border);
+}
+
+.prod-card:hover {
+    /* Transform up */
+    transform: translateY(-5px);
+    /* Box shadow */
+    box-shadow: var(--shadow-lg);
+    /* Border color */
+    border-color: #3a3a3a;
+}
+
+/* ──────────────────────────────────────────────────────────
+   IMAGEN DEL PRODUCTO
+   ────────────────────────────────────────────────────────── */
+
+.prod-img-wrap {
+    /* Posición relativa */
+    position: relative;
+    /* Height */
+    height: 200px;
+    /* Background */
+    background: var(--color-border);
+    /* Overflow hidden */
+    overflow: hidden;
+}
+
+.prod-img-wrap img {
+    /* Width 100% */
+    width: 100%;
+    /* Height 100% */
+    height: 100%;
+    /* Object fit cover */
+    object-fit: cover;
+    /* Transición */
+    transition: transform var(--transition-slow);
+}
+
+.prod-card:hover .prod-img-wrap img {
+    /* Zoom en hover */
+    transform: scale(1.06);
+}
+
+.prod-img-fallback {
+    /* Width 100% */
+    width: 100%;
+    /* Height 100% */
+    height: 100%;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Justificar */
+    justify-content: center;
+    /* Background */
+    background: var(--color-border);
+    /* Color */
+    color: rgba(255, 255, 255, 0.3);
+    /* Font size */
+    font-size: 3rem;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BADGE DEL PRODUCTO
+   ────────────────────────────────────────────────────────── */
+
+.prod-badge {
+    /* Posición absoluta */
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    /* Background */
+    background: var(--color-primary);
+    /* Color */
+    color: var(--color-text-primary);
+    /* Font size */
+    font-size: 11px;
+    /* Font weight */
+    font-weight: 700;
+    /* Padding */
+    padding: 4px 10px;
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Letter spacing */
+    letter-spacing: 0.5px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   CUERPO DEL PRODUCTO
+   ────────────────────────────────────────────────────────── */
+
+.prod-body {
+    /* Padding */
+    padding: 16px;
+    /* Flex 1 */
+    flex: 1;
+    /* Display flex */
+    display: flex;
+    /* Flex direction */
+    flex-direction: column;
+}
+
+.prod-cat {
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Font weight */
+    font-weight: 700;
+    /* Color */
+    color: var(--color-primary);
+    /* Text transform */
+    text-transform: uppercase;
+    /* Letter spacing */
+    letter-spacing: 0.8px;
+    /* Margin bottom */
+    margin-bottom: 6px;
+}
+
+.prod-name {
+    /* Font size */
+    font-size: 1rem;
+    /* Font weight */
+    font-weight: 700;
+    /* Color */
+    color: var(--color-text-primary);
+    /* Margin bottom */
+    margin-bottom: 6px;
+    /* Line height */
+    line-height: 1.3;
+}
+
+.prod-desc {
+    /* Font size */
+    font-size: 0.82rem;
+    /* Color */
+    color: var(--color-text-tertiary);
+    /* Margin bottom */
+    margin-bottom: 14px;
+    /* Flex 1 */
+    flex: 1;
+    /* Display webkit box */
+    display: -webkit-box;
+    /* Line clamp 2 */
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    /* Box orient vertical */
+    -webkit-box-orient: vertical;
+    /* Overflow hidden */
+    overflow: hidden;
+}
+
+/* ──────────────────────────────────────────────────────────
+   PIE DEL PRODUCTO
+   ────────────────────────────────────────────────────────── */
+
+.prod-footer {
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Justificar space-between */
+    justify-content: space-between;
+    /* Gap */
+    gap: 10px;
+}
+
+.prod-price {
+    /* Font size */
+    font-size: 1.3rem;
+    /* Font weight */
+    font-weight: 900;
+    /* Color */
+    color: var(--color-text-primary);
+}
+
+.prod-price span {
+    /* Font size */
+    font-size: 0.85rem;
+    /* Font weight */
+    font-weight: 600;
+    /* Color */
+    color: var(--color-text-secondary);
+    /* Margin right */
+    margin-right: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÓN AGREGAR
+   ────────────────────────────────────────────────────────── */
+
+.btn-add {
+    /* Background */
+    background: var(--color-primary);
+    /* Color */
+    color: var(--color-text-primary);
+    /* Border */
+    border: none;
+    /* Border radius */
+    border-radius: var(--radius-full);
+    /* Padding */
+    padding: 9px 18px;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Font weight */
+    font-weight: 700;
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap */
+    gap: 6px;
+    /* Transición */
+    transition: background var(--transition-fast);
+    /* White space nowrap */
+    white-space: nowrap;
+    /* Cursor */
+    cursor: pointer;
+}
+
+.btn-add:hover {
+    /* Background */
+    background: var(--color-primary-dark);
+    /* Color */
+    color: var(--color-text-primary);
+}
+
+.btn-add:disabled, .btn-add.disabled {
+    /* Background */
+    background: #333;
+    /* Color */
+    color: rgba(255, 255, 255, 0.3);
+    /* Cursor */
+    cursor: not-allowed;
+    /* Opacity */
+    opacity: 0.6;
+}
+
+/* ──────────────────────────────────────────────────────────
+   EMPTY STATE
+   ────────────────────────────────────────────────────────── */
+
+.empty-state {
+    /* Grid column */
+    grid-column: 1 / -1;
+    /* Text align */
+    text-align: center;
+    /* Padding */
+    padding: 80px 20px;
+    /* Color */
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.empty-state i {
+    /* Font size */
+    font-size: 4rem;
+    /* Margin bottom */
+    margin-bottom: 16px;
+    /* Display block */
+    display: block;
+}
+
+.empty-state h3 {
+    /* Font size */
+    font-size: 1.2rem;
+    /* Margin bottom */
+    margin-bottom: 16px;
+}

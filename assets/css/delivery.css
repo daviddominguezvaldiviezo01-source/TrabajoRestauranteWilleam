@@ -1,0 +1,291 @@
+.delivery-wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 18px 48px;
+    color: #f5f5f5;
+}
+
+.delivery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.delivery-tag {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(200, 16, 46, 0.14);
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.delivery-header h1 {
+    margin: 0 0 12px;
+    font-size: 2.15rem;
+    line-height: 1.1;
+}
+
+.delivery-description {
+    margin: 0;
+    max-width: 600px;
+    color: rgba(245, 245, 245, 0.78);
+    font-size: 0.98rem;
+}
+
+.btn-delivery {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 180px;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-delivery:hover {
+    transform: translateY(-1px);
+}
+
+.btn-delivery-primary {
+    background: #d32f2f;
+    color: #fff;
+}
+
+.btn-delivery-success {
+    background: #388e3c;
+    color: #fff;
+}
+
+.btn-delivery-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.delivery-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px 22px;
+}
+
+.stat-label {
+    display: block;
+    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.stat-card strong {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.delivery-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.82);
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.delivery-alert {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.26);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    color: #e8f5e9;
+}
+
+.delivery-alert i {
+    font-size: 1.2rem;
+}
+
+.delivery-empty,
+.delivery-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    padding: 24px;
+}
+
+.delivery-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.delivery-empty h2 {
+    margin: 0 0 10px;
+    font-size: 1.65rem;
+}
+
+.delivery-card + .delivery-card {
+    margin-top: 18px;
+}
+
+.delivery-card-header,
+.delivery-card-body,
+.delivery-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.delivery-card-header {
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.delivery-card-header h3 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.delivery-card-meta {
+    display: grid;
+    gap: 6px;
+    justify-items: end;
+    min-width: 180px;
+}
+
+.delivery-card-meta strong {
+    font-size: 1.15rem;
+}
+
+.delivery-card-block {
+    flex: 1 1 220px;
+    min-width: 220px;
+}
+
+.block-title {
+    display: block;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.delivery-card-block p,
+.delivery-card-block li {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.delivery-card-items ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.delivery-card-items li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 12px;
+}
+
+.delivery-card-items li span {
+    opacity: 0.82;
+}
+
+.delivery-card-footer {
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.delivery-action-form {
+    margin: 0;
+}
+
+.badge-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.badge-preparando {
+    background: rgba(33, 150, 243, 0.12);
+    color: #81d4fa;
+}
+
+.badge-en_camino {
+    background: rgba(0, 188, 212, 0.12);
+    color: #4dd0e1;
+}
+
+.badge-entregado {
+    background: rgba(76, 175, 80, 0.12);
+    color: #a5d6a7;
+}
+
+.delivery-label {
+    display: inline-flex;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 700;
+}
+
+@media (max-width: 860px) {
+    .delivery-header,
+    .delivery-card-header,
+    .delivery-card-body,
+    .delivery-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .delivery-card-meta {
+        justify-items: start;
+    }
+}

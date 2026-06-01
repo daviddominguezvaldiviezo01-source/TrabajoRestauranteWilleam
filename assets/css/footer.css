@@ -1,0 +1,169 @@
+/**
+ * ============================================================
+ * ARCHIVO: assets/css/footer.css
+ * ============================================================
+ * DESCRIPCIÓN: Estilos para el pie de página
+ * Enlaces, información de contacto, redes sociales
+ * ============================================================
+ */
+
+/* ──────────────────────────────────────────────────────────
+   FOOTER PRINCIPAL
+   ────────────────────────────────────────────────────────── */
+
+footer {
+    /* Background */
+    background: #0d0d0d;
+    /* Border top */
+    border-top: 1px solid #222;
+    /* Padding */
+    padding: 40px 20px 20px;
+    /* Color */
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ──────────────────────────────────────────────────────────
+   CONTENEDOR FOOTER
+   ────────────────────────────────────────────────────────── */
+
+.footer-inner {
+    /* Ancho máximo */
+    max-width: 1300px;
+    /* Margin auto */
+    margin: 0 auto;
+    /* Display grid */
+    display: grid;
+    /* Grid template columns */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    /* Gap */
+    gap: 30px;
+    /* Margin bottom */
+    margin-bottom: 30px;
+}
+
+.footer-inner h5 {
+    /* Color */
+    color: var(--color-text-primary);
+    /* Font weight */
+    font-weight: 700;
+    /* Margin bottom */
+    margin-bottom: 12px;
+    /* Font size */
+    font-size: var(--font-size-sm);
+}
+
+.footer-inner p {
+    /* Font size */
+    font-size: var(--font-size-sm);
+}
+
+.footer-inner a {
+    /* Color */
+    color: rgba(255, 255, 255, 0.45);
+    /* Sin subrayado */
+    text-decoration: none;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Display block */
+    display: block;
+    /* Margin bottom */
+    margin-bottom: 8px;
+    /* Transición */
+    transition: color var(--transition-fast);
+}
+
+.footer-inner a:hover {
+    /* Color en hover */
+    color: var(--color-primary);
+}
+
+/* ──────────────────────────────────────────────────────────
+   REDES SOCIALES
+   ────────────────────────────────────────────────────────── */
+
+.social-links {
+    /* Display flex */
+    display: flex;
+    /* Gap */
+    gap: 14px;
+    /* Font size */
+    font-size: 1.4rem;
+}
+
+.social-links a {
+    /* Display inline */
+    display: inline;
+    /* Margin 0 */
+    margin: 0;
+}
+
+/* ──────────────────────────────────────────────────────────
+   PIE DEL FOOTER (Copyright)
+   ────────────────────────────────────────────────────────── */
+
+.footer-bottom {
+    /* Ancho máximo */
+    max-width: 1300px;
+    /* Margin auto */
+    margin: 0 auto;
+    /* Border top */
+    border-top: 1px solid #222;
+    /* Padding top */
+    padding-top: 18px;
+    /* Text align */
+    text-align: center;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Color */
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ──────────────────────────────────────────────────────────
+   MENSAJES TOAST (Notificaciones)
+   ────────────────────────────────────────────────────────── */
+
+.toast-msg {
+    /* Posición fixed */
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    /* Background */
+    background: var(--color-bg-light);
+    /* Border left */
+    border-left: 4px solid var(--color-primary);
+    /* Color */
+    color: var(--color-text-primary);
+    /* Padding */
+    padding: 14px 20px;
+    /* Border radius */
+    border-radius: var(--radius-md);
+    /* Box shadow */
+    box-shadow: var(--shadow-md);
+    /* Display flex */
+    display: flex;
+    /* Alinear items */
+    align-items: center;
+    /* Gap */
+    gap: 10px;
+    /* Font size */
+    font-size: var(--font-size-sm);
+    /* Z-index */
+    z-index: var(--z-toast);
+    /* Animation */
+    animation: slideIn var(--transition-normal) ease;
+}
+
+@keyframes slideIn {
+    from {
+        /* Opacidad 0 */
+        opacity: 0;
+        /* Transform */
+        transform: translateX(30px);
+    }
+    to {
+        /* Opacidad 1 */
+        opacity: 1;
+        /* Transform */
+        transform: translateX(0);
+    }
+}
