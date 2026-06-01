@@ -1,6 +1,9 @@
 <?php
 // _admin_layout.php — incluir al inicio del <body> en cada página admin
 // Uso: include('_admin_layout.php'); con $active_page definido antes
+if (!isset($conexion) && file_exists(__DIR__ . '/../conexion.php')) {
+    include_once __DIR__ . '/../conexion.php';
+}
 ?>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -159,7 +162,10 @@ body{background:#111;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100
     <a href="pedidos.php" class="<?php echo ($active_page==='pedidos')?'active':''; ?>">
         <i class="fas fa-receipt"></i> Pedidos
         <?php
-        $pp = mysqli_fetch_assoc(mysqli_query($conexion,"SELECT COUNT(*) AS c FROM pedidos WHERE estado='pendiente'"))['c'];
+        $pp = 0;
+        if (isset($conexion)) {
+            $pp = mysqli_fetch_assoc(mysqli_query($conexion,"SELECT COUNT(*) AS c FROM pedidos WHERE estado='pendiente'"))['c'];
+        }
         if($pp > 0): ?><span class="sidebar-badge"><?php echo $pp; ?></span><?php endif; ?>
     </a>
     <a href="clientes.php" class="<?php echo ($active_page==='clientes')?'active':''; ?>">

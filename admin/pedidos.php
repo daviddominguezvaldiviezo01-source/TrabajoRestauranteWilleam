@@ -1,6 +1,10 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once __DIR__ . '/../conexion.php';
+/** @var mysqli $conexion */
+if (!isset($conexion) || !$conexion) {
+    die('Error de conexión: no se pudo establecer la conexión a la base de datos.');
+}
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:../cliente/login.php"); exit(); }
 
 $msg = '';
@@ -31,6 +35,46 @@ if (isset($_POST['cambiar_estado'])) {
 $filtro_estado = $_GET['estado'] ?? '';
 $where = $filtro_estado ? "WHERE p.estado = '".mysqli_real_escape_string($conexion,$filtro_estado)."'" : '';
 
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$itemsPerPage = 10;
+$offset = ($page - 1) * $itemsPerPage;
+
+$totalPedidosQuery = mysqli_query($conexion, "SELECT COUNT(*) AS total FROM pedidos p $where");
+$totalPedidos = mysqli_fetch_assoc($totalPedidosQuery)['total'];
+$totalPages = max(1, ceil($totalPedidos / $itemsPerPage));
+if ($page > $totalPages) { $page = $totalPages; $offset = ($page - 1) * $itemsPerPage; }
+
+function buildPaginationItems($current, $total) {
+    $pages = [];
+    if ($total <= 7) {
+        return range(1, $total);
+    }
+    $pages[] = 1;
+    $pages[] = 2;
+    for ($i = $current - 1; $i <= $current + 1; $i++) {
+        if ($i > 2 && $i < $total - 1) {
+            $pages[] = $i;
+        }
+    }
+    $pages[] = $total - 1;
+    $pages[] = $total;
+    $pages = array_values(array_unique($pages));
+    sort($pages);
+
+    $items = [];
+    $last = 0;
+    foreach ($pages as $pageNumber) {
+        if ($last && $pageNumber > $last + 1) {
+            $items[] = '...';
+        }
+        $items[] = $pageNumber;
+        $last = $pageNumber;
+    }
+    return $items;
+}
+
+$pageItems = buildPaginationItems($page, $totalPages);
+
 $repartidor_select = $has_repartidor ? ", u2.nombre AS repartidor_nombre" : "";
 $repartidor_join = $has_repartidor ? "LEFT JOIN usuarios u2 ON p.id_repartidor=u2.id_usuario" : "";
 
@@ -42,7 +86,7 @@ $pedidos = mysqli_query($conexion,
      LEFT JOIN direcciones d ON p.id_direccion=d.id_direccion
      LEFT JOIN pagos pg ON p.id_pedido=pg.id_pedido
      $repartidor_join
-     $where ORDER BY p.fecha DESC");
+     $where ORDER BY p.fecha DESC LIMIT $offset,$itemsPerPage");
 
 $repartidores = $has_repartidor ? mysqli_query($conexion, "SELECT id_usuario, nombre FROM usuarios WHERE rol='delivery' ORDER BY nombre") : null;
 
@@ -72,6 +116,16 @@ $active_page = 'pedidos';
 <title>Pedidos - Brisamar Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+.pagination-custom{display:flex;justify-content:center;align-items:center;gap:0.35rem;flex-wrap:wrap;margin-top:20px;}
+.pagination-custom .page-item{list-style:none;}
+.pagination-custom .page-link{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:0.55rem 0.9rem;border-radius:999px;border:1px solid #2a2a2a;background:#171717;color:#ddd;text-decoration:none;transition:all .2s ease;}
+.pagination-custom .page-link:hover{background:rgba(200,16,46,.14);color:#fff;border-color:#c8102e;}
+.pagination-custom .page-item.active .page-link{background:#c8102e;color:#fff;border-color:#c8102e;box-shadow:0 0 0 3px rgba(200,16,46,.12);}
+.pagination-custom .page-item.disabled .page-link{background:#111;color:rgba(255,255,255,.35);border-color:#2a2a2a;cursor:not-allowed;pointer-events:none;}
+.pagination-info{color:rgba(255,255,255,.65);font-size:0.95rem;}
+.pagination-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
+</style>
 </head>
 <body>
 <?php include('_admin_layout.php'); ?>
@@ -187,6 +241,36 @@ $active_page = 'pedidos';
                 <?php endwhile; ?>
             </tbody>
         </table>
+        <?php if ($totalPages > 1): ?>
+        <div class="pagination-row">
+            <div class="pagination-info">
+                Mostrando <?php echo min($offset + 1, $totalPedidos); ?> - <?php echo min($offset + $itemsPerPage, $totalPedidos); ?> de <?php echo $totalPedidos; ?> pedidos
+            </div>
+            <nav aria-label="Paginación de pedidos">
+                <ul class="pagination-custom">
+                    <?php
+                    $queryPrefix = 'pedidos.php?';
+                    if ($filtro_estado) { $queryPrefix .= 'estado=' . urlencode($filtro_estado) . '&'; }
+                    ?>
+                    <li class="page-item <?php echo ($page<=1)?'disabled':''; ?>">
+                        <a class="page-link" href="<?php echo $queryPrefix; ?>page=<?php echo max(1,$page-1); ?>">Anterior</a>
+                    </li>
+                    <?php foreach ($pageItems as $item): ?>
+                        <?php if ($item === '...'): ?>
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        <?php else: ?>
+                            <li class="page-item <?php echo ($page==$item)?'active':''; ?>">
+                                <a class="page-link" href="<?php echo $queryPrefix; ?>page=<?php echo $item; ?>"><?php echo $item; ?></a>
+                            </li>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                    <li class="page-item <?php echo ($page>=$totalPages)?'disabled':''; ?>">
+                        <a class="page-link" href="<?php echo $queryPrefix; ?>page=<?php echo min($totalPages,$page+1); ?>">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
