@@ -135,16 +135,16 @@ Options -Indexes
 
 # ──────────────────────────────────────────────────────────
 # PREVENIR HOTLINKING (Proteger imágenes)
-# ──────────────────────────────────────────────────────────
-
-<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
-    SetEnvIf Request_URI "^" isImage=1
-    SetEnvIf HTTP_REFERER "^$" isImage=1
-    SetEnvIf HTTP_REFERER "^https?://(.+\.)?restaurante2" isImage=0
-    
-    Order allow,deny
-    Allow from env=!isImage
-</FilesMatch>
+# Nota: deshabilitado en entorno local porque bloquea accesos legítimos.
+# Si necesitas protección en producción, reemplaza por reglas de mod_rewrite
+# que permitan localhost y tu dominio.
+# <FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+#     SetEnvIf Request_URI "^" isImage=1
+#     SetEnvIf HTTP_REFERER "^$" isImage=1
+#     SetEnvIf HTTP_REFERER "^https?://(.+\.)?restaurante2" isImage=0
+#     Order allow,deny
+#     Allow from env=!isImage
+# </FilesMatch>
 
 # ──────────────────────────────────────────────────────────
 # CHARSET UTF-8

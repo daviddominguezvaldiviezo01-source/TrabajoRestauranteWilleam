@@ -1,13 +1,14 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once dirname(__FILE__) . '/../conexion.php';
 
-// Evitar que usuarios con rol 'delivery' procesen pedidos desde la interfaz cliente
-include(__DIR__ . '/guard_delivery.php');
-
-// Permitir invitados y usuarios registrados
-$es_invitado = isset($_SESSION['invitado']) && $_SESSION['invitado'] === true;
 $id_usuario = isset($_SESSION['usuario']) ? intval($_SESSION['usuario']) : null;
+
+if (!$id_usuario) {
+    $_SESSION['error'] = 'Debes iniciar sesión antes de procesar el pedido.';
+    header('Location: login.php');
+    exit();
+}
 
 if (!isset($_SESSION['carrito']) || count($_SESSION['carrito']) == 0) {
     header("Location: carrito.php");
@@ -42,11 +43,6 @@ if (!empty($errores)) {
 $metodos_validos = ['efectivo','tarjeta','yape','plin'];
 if (!in_array($metodo_pago, $metodos_validos)) {
     $metodo_pago = 'efectivo';
-}
-
-// Si es invitado, crear usuario temporal o sin usuario
-if ($es_invitado || !$id_usuario) {
-    $id_usuario = null; // El pedido no tendrá usuario asociado
 }
 
 // ==========================================
@@ -98,7 +94,13 @@ foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
         }
         $subtotal = $fila['precio'] * $cantidad;
         $total += $subtotal;
-        $items_carrito[] = ['id_producto' => $id, 'cantidad' => $cantidad, 'precio' => $fila['precio'], 'subtotal' => $subtotal];
+        $items_carrito[] = [
+            'id_producto' => $id,
+            'nombre' => $fila['nombre'],
+            'cantidad' => $cantidad,
+            'precio' => $fila['precio'],
+            'subtotal' => $subtotal
+        ];
     }
 }
 
@@ -107,11 +109,25 @@ $impuesto = $total * 0.18; // 18% IGV
 $delivery = 5; // Costo fijo
 $total_con_impuesto = $total + $impuesto + $delivery;
 
-// Insertar pedido
+// Insertar pedido (evitar columnas inexistentes)
 $estado_pedido = 'pendiente';
-$stmtPedido = mysqli_prepare($conexion,
-    "INSERT INTO pedidos (id_usuario, id_direccion, estado, total) VALUES (?,?,?,?)");
-mysqli_stmt_bind_param($stmtPedido, "iids", $id_usuario, $id_direccion, $estado_pedido, $total_con_impuesto);
+
+// Comprobar si existen columnas para datos de cliente en pedidos
+$has_guest_columns = false;
+$resCols = mysqli_query($conexion, "SHOW COLUMNS FROM pedidos LIKE 'nombre_cliente'");
+if ($resCols && mysqli_num_rows($resCols) > 0) {
+    $has_guest_columns = true;
+}
+
+if ($has_guest_columns) {
+    $stmtPedido = mysqli_prepare($conexion,
+        "INSERT INTO pedidos (id_usuario, id_direccion, estado, total, nombre_cliente, email_cliente, telefono_cliente) VALUES (?,?,?,?,?,?,?)");
+    mysqli_stmt_bind_param($stmtPedido, "iisdsss", $id_usuario, $id_direccion, $estado_pedido, $total_con_impuesto, $nombre, $correo, $telefono);
+} else {
+    $stmtPedido = mysqli_prepare($conexion,
+        "INSERT INTO pedidos (id_usuario, id_direccion, estado, total) VALUES (?,?,?,?)");
+    mysqli_stmt_bind_param($stmtPedido, "iisd", $id_usuario, $id_direccion, $estado_pedido, $total_con_impuesto);
+}
 
 if (!mysqli_stmt_execute($stmtPedido)) {
     $_SESSION['error'] = "Error al crear el pedido. Intenta nuevamente.";
@@ -147,24 +163,15 @@ $stmtPago = mysqli_prepare($conexion,
 mysqli_stmt_bind_param($stmtPago, "iss", $id_pedido, $metodo_pago, $estado_pago);
 mysqli_stmt_execute($stmtPago);
 
-// Guardar información del cliente (si es invitado)
-if ($es_invitado || !$id_usuario) {
-    // Guardar en sesión o tabla temporal
-    $_SESSION['pedido_cliente'] = [
-        'nombre' => $nombre,
-        'correo' => $correo,
-        'telefono' => $telefono,
-        'direccion' => $nueva_direccion,
-        'referencia' => $referencia
-    ];
-}
+    $_SESSION['mensaje'] = "¡Pedido #{$id_pedido} realizado con éxito! 🎉";
 
-// Limpiar carrito y sesión de invitado
+// Limpiar carrito y cualquier marca de invitado residual
 unset($_SESSION['carrito']);
 unset($_SESSION['invitado']);
 
-// Mensaje de éxito
-$_SESSION['mensaje'] = "¡Pedido #$id_pedido realizado con éxito! 🎉";
+if (!isset($_SESSION['mensaje']) && !isset($_SESSION['error'])) {
+    $_SESSION['mensaje'] = "¡Pedido #$id_pedido realizado con éxito! 🎉";
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -173,6 +180,7 @@ $_SESSION['mensaje'] = "¡Pedido #$id_pedido realizado con éxito! 🎉";
 <meta http-equiv="refresh" content="5;url=index.php">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pedido confirmado - Mi Restaurante</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 <style>

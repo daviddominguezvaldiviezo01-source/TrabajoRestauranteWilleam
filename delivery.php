@@ -21,7 +21,7 @@ $csrf_token = generar_token_csrf();
 $id_repartidor = intval($_SESSION['usuario']);
 
 $filtro = $_GET['f'] ?? 'ir a recoger';
-$estados_validos = ['ir a recoger', 'en camino', 'entregado', 'all'];
+$estados_validos = ['ir a recoger', 'en camino', 'entregado', 'cancelado', 'all'];
 if (!in_array($filtro, $estados_validos, true)) {
     $filtro = 'ir a recoger';
 }
@@ -66,6 +66,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizar_estado']))
         } else {
             $_SESSION['delivery_message'] = '❌ Error de servidor al cambiar el estado: ' . mysqli_error($conexion);
         }
+    } elseif ($accion === 'cancelar') {
+        $stmt = mysqli_prepare($conexion,
+            "UPDATE pedidos SET estado='cancelado' WHERE id_pedido = ? AND id_repartidor = ? AND estado IN ('ir a recoger', 'en camino')");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, 'ii', $id_pedido, $id_repartidor);
+            mysqli_stmt_execute($stmt);
+            $_SESSION['delivery_message'] = mysqli_stmt_affected_rows($stmt) > 0
+                ? '✅ Pedido cancelado.'
+                : '❌ No se pudo cancelar el pedido. Verifica el estado del pedido.';
+            mysqli_stmt_close($stmt);
+        } else {
+            $_SESSION['delivery_message'] = '❌ Error de servidor al cambiar el estado: ' . mysqli_error($conexion);
+        }
     } else {
         $_SESSION['delivery_message'] = '❌ Acción no permitida.';
     }
@@ -82,6 +95,7 @@ $pedidos_asignados = obtener_pedidos_delivery($id_repartidor, 'all');
 $contador_ir = 0;
 $contador_camino = 0;
 $contador_entregado = 0;
+$contador_cancelado = 0;
 foreach ($pedidos_asignados as $pedido) {
     if ($pedido['estado'] === 'ir a recoger') {
         $contador_ir++;
@@ -89,6 +103,8 @@ foreach ($pedidos_asignados as $pedido) {
         $contador_camino++;
     } elseif ($pedido['estado'] === 'entregado') {
         $contador_entregado++;
+    } elseif ($pedido['estado'] === 'cancelado') {
+        $contador_cancelado++;
     }
 }
 
@@ -97,6 +113,7 @@ function tipo_badge($estado) {
         case 'ir a recoger': return 'badge-preparando';
         case 'en camino': return 'badge-en_camino';
         case 'entregado': return 'badge-entregado';
+        case 'cancelado': return 'badge-cancelado';
         default: return 'badge-secondary';
     }
 }
@@ -135,10 +152,14 @@ function tipo_badge($estado) {
                 <span class="stat-label">Entregados</span>
                 <strong><?php echo $contador_entregado; ?></strong>
             </article>
+            <article class="stat-card">
+                <span class="stat-label">Cancelados</span>
+                <strong><?php echo $contador_cancelado; ?></strong>
+            </article>
         </section>
 
         <section class="delivery-filters" aria-label="Filtros de pedidos">
-            <?php foreach (['ir a recoger' => 'Ir a recoger', 'en camino' => 'En camino', 'entregado' => 'Entregados', 'all' => 'Todos'] as $key => $label): ?>
+            <?php foreach (['ir a recoger' => 'Ir a recoger', 'en camino' => 'En camino', 'entregado' => 'Entregados', 'cancelado' => 'Cancelados', 'all' => 'Todos'] as $key => $label): ?>
                 <a href="delivery.php?f=<?php echo urlencode($key); ?>" class="filter-pill <?php echo $filtro === $key ? 'active' : ''; ?>"><?php echo $label; ?></a>
             <?php endforeach; ?>
         </section>
@@ -207,6 +228,14 @@ function tipo_badge($estado) {
                                         <i class="fas fa-truck-moving"></i> Tomar pedido
                                     </button>
                                 </form>
+                                <form method="POST" class="delivery-action-form">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                                    <input type="hidden" name="id_pedido" value="<?php echo intval($pedido['id_pedido']); ?>">
+                                    <input type="hidden" name="accion" value="cancelar">
+                                    <button type="submit" name="actualizar_estado" class="btn-delivery btn-delivery-danger">
+                                        <i class="fas fa-times"></i> Cancelar pedido
+                                    </button>
+                                </form>
                             <?php elseif ($pedido['estado'] === 'en camino'): ?>
                                 <form method="POST" class="delivery-action-form">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
@@ -216,8 +245,18 @@ function tipo_badge($estado) {
                                         <i class="fas fa-check"></i> Marcar entregado
                                     </button>
                                 </form>
-                            <?php else: ?>
+                                <form method="POST" class="delivery-action-form">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
+                                    <input type="hidden" name="id_pedido" value="<?php echo intval($pedido['id_pedido']); ?>">
+                                    <input type="hidden" name="accion" value="cancelar">
+                                    <button type="submit" name="actualizar_estado" class="btn-delivery btn-delivery-danger">
+                                        <i class="fas fa-times"></i> Cancelar pedido
+                                    </button>
+                                </form>
+                            <?php elseif ($pedido['estado'] === 'entregado'): ?>
                                 <span class="delivery-label">Pedido entregado</span>
+                            <?php else: ?>
+                                <span class="delivery-label delivery-label-canceled">Pedido cancelado</span>
                             <?php endif; ?>
                         </footer>
                     </article>

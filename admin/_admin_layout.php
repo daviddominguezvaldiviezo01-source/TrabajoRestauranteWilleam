@@ -1,9 +1,12 @@
 <?php
 // _admin_layout.php — incluir al inicio del <body> en cada página admin
 // Uso: include('_admin_layout.php'); con $active_page definido antes
-if (!isset($conexion) && file_exists(__DIR__ . '/../conexion.php')) {
-    include_once __DIR__ . '/../conexion.php';
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
 }
+require_once __DIR__ . '/../conexion.php';
+/** @var mysqli $conexion */
+$username = htmlspecialchars($_SESSION['nombre'] ?? 'Administrador');
 ?>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -159,12 +162,23 @@ body{background:#111;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100
     <a href="productos.php" class="<?php echo ($active_page==='productos')?'active':''; ?>">
         <i class="fas fa-box"></i> Productos
     </a>
+    <a href="anuncios.php" class="<?php echo ($active_page==='anuncios')?'active':''; ?>">
+        <i class="fas fa-bullhorn"></i> Publicidad
+    </a>
     <a href="pedidos.php" class="<?php echo ($active_page==='pedidos')?'active':''; ?>">
         <i class="fas fa-receipt"></i> Pedidos
         <?php
         $pp = 0;
-        if (isset($conexion)) {
-            $pp = mysqli_fetch_assoc(mysqli_query($conexion,"SELECT COUNT(*) AS c FROM pedidos WHERE estado='pendiente'"))['c'];
+        $estadoPendiente = 'pendiente';
+        $stmtCount = mysqli_prepare($conexion, "SELECT COUNT(*) AS c FROM pedidos WHERE estado = ?");
+        if ($stmtCount) {
+            mysqli_stmt_bind_param($stmtCount, 's', $estadoPendiente);
+            mysqli_stmt_execute($stmtCount);
+            $resCount = mysqli_stmt_get_result($stmtCount);
+            if ($resCount) {
+                $pp = mysqli_fetch_assoc($resCount)['c'] ?? 0;
+            }
+            mysqli_stmt_close($stmtCount);
         }
         if($pp > 0): ?><span class="sidebar-badge"><?php echo $pp; ?></span><?php endif; ?>
     </a>
@@ -174,7 +188,13 @@ body{background:#111;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100
     <a href="categorias.php" class="<?php echo ($active_page==='categorias')?'active':''; ?>">
         <i class="fas fa-tags"></i> Categorías
     </a>
+    <a href="configuracion.php" class="<?php echo ($active_page==='configuracion')?'active':''; ?>">
+        <i class="fas fa-cog"></i> Configuración
+    </a>
     <hr class="sidebar-sep">
+    <a href="../cliente/index.php">
+        <i class="fas fa-store"></i> Ver Tienda
+    </a>
     <a href="../logout.php" class="danger">
         <i class="fas fa-right-from-bracket"></i> Cerrar Sesión
     </a>

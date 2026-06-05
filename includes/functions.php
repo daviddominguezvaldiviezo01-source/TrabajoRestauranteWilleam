@@ -257,25 +257,42 @@ function obtener_usuario_por_email($email) {
  *
  * @global mysqli $conexion - Conexión a la base de datos
  * @param int $id_repartidor - ID del repartidor
- * @param string $estado - Filtro de estado: 'ir a recoger', 'en camino', 'entregado' o 'all'
+ * @param string $estado - Filtro de estado: 'ir a recoger', 'en camino', 'entregado', 'cancelado' o 'all'
  * @return array Lista de pedidos asignados
  */
 function obtener_pedidos_delivery($id_repartidor, $estado = 'ir a recoger') {
     global $conexion;
 
     $id_repartidor = (int) $id_repartidor;
-    $estados_validos = ['ir a recoger', 'en camino', 'entregado', 'all'];
+    $estados_validos = ['ir a recoger', 'en camino', 'entregado', 'cancelado', 'all'];
     if (!in_array($estado, $estados_validos, true)) {
         $estado = 'ir a recoger';
     }
 
-    $sql = "SELECT p.*, u.nombre AS cliente, u.email, u.telefono,
-            d.direccion, d.referencia, pg.metodo, pg.estado AS estado_pago
-     FROM pedidos p
-     LEFT JOIN usuarios u ON p.id_usuario = u.id_usuario
-     LEFT JOIN direcciones d ON p.id_direccion = d.id_direccion
-     LEFT JOIN pagos pg ON p.id_pedido = pg.id_pedido
-     WHERE p.id_repartidor = ?";
+    // Verificar si existen columnas de cliente invitado en la tabla pedidos
+    $has_guest_columns = false;
+    $resCols = mysqli_query($conexion, "SHOW COLUMNS FROM pedidos LIKE 'nombre_cliente'");
+    if ($resCols && mysqli_num_rows($resCols) > 0) {
+        $has_guest_columns = true;
+    }
+
+    if ($has_guest_columns) {
+        $sql = "SELECT p.*, COALESCE(u.nombre, p.nombre_cliente) AS cliente, COALESCE(u.email, p.email_cliente) AS email, COALESCE(u.telefono, p.telefono_cliente) AS telefono,\n"
+             . "            d.direccion, d.referencia, pg.metodo, pg.estado AS estado_pago\n"
+             . "     FROM pedidos p\n"
+             . "     LEFT JOIN usuarios u ON p.id_usuario = u.id_usuario\n"
+             . "     LEFT JOIN direcciones d ON p.id_direccion = d.id_direccion\n"
+             . "     LEFT JOIN pagos pg ON p.id_pedido = pg.id_pedido\n"
+             . "     WHERE p.id_repartidor = ?";
+    } else {
+        $sql = "SELECT p.*, u.nombre AS cliente, u.email, u.telefono,\n"
+             . "            d.direccion, d.referencia, pg.metodo, pg.estado AS estado_pago\n"
+             . "     FROM pedidos p\n"
+             . "     LEFT JOIN usuarios u ON p.id_usuario = u.id_usuario\n"
+             . "     LEFT JOIN direcciones d ON p.id_direccion = d.id_direccion\n"
+             . "     LEFT JOIN pagos pg ON p.id_pedido = pg.id_pedido\n"
+             . "     WHERE p.id_repartidor = ?";
+    }
 
     if ($estado !== 'all') {
         $sql .= " AND p.estado = ?";

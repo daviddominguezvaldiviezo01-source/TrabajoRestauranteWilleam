@@ -1,6 +1,6 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once dirname(__FILE__) . '/../conexion.php';
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:../cliente/login.php"); exit(); }
 
 $msg = '';

@@ -1,9 +1,15 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once dirname(__FILE__) . '/../conexion.php';
 
-$es_invitado = isset($_SESSION['invitado']) && $_SESSION['invitado'] === true;
-$id_usuario  = isset($_SESSION['usuario']) ? $_SESSION['usuario'] : null;
+$es_invitado = false;
+$id_usuario = isset($_SESSION['usuario']) ? $_SESSION['usuario'] : null;
+
+if (!$id_usuario) {
+    $_SESSION['error'] = 'Necesitas iniciar sesión o registrarte antes de finalizar tu pedido.';
+    header('Location: login.php');
+    exit();
+}
 
 if (!isset($_SESSION['carrito']) || count($_SESSION['carrito']) == 0) {
     header("Location: carrito.php"); exit();
@@ -49,6 +55,7 @@ if ($id_usuario) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Checkout - Brisamar</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -312,6 +319,7 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
     </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.querySelectorAll('.metodo-btn').forEach(btn => {
     btn.addEventListener('click', function() {

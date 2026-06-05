@@ -1,45 +1,80 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once __DIR__ . '/../conexion.php';
+/** @var mysqli $conexion */
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:../cliente/login.php"); exit(); }
 
 $msg = ''; $msg_tipo = 'success';
 
 // CREAR
 if (isset($_POST['crear'])) {
-    $nombre = $_POST['nombre'];
-    $desc = $_POST['descripcion'];
-    $precio = floatval($_POST['precio']);
-    $stock = intval($_POST['stock']);
-    $imagen = $_POST['imagen'];
-    $id_cat = intval($_POST['id_categoria']);
+    $nombre = trim($_POST['nombre'] ?? '');
+    $desc = trim($_POST['descripcion'] ?? '');
+    $precio = floatval($_POST['precio'] ?? 0);
+    $stock = intval($_POST['stock'] ?? 0);
+    $imagen = trim($_POST['imagen'] ?? '');
+    $id_cat = intval($_POST['id_categoria'] ?? 0);
     $disp = isset($_POST['disponible']) ? 1 : 0;
     $fav = isset($_POST['favorito']) ? 1 : 0;
     $est = isset($_POST['estrella']) ? 1 : 0;
-    $stmt = mysqli_prepare($conexion,
-        "INSERT INTO productos (nombre,descripcion,precio,stock,imagen,disponible,id_categoria,favorito,estrella) VALUES (?,?,?,?,?,?,?,?,?)");
-    mysqli_stmt_bind_param($stmt,"ssdisiiii",$nombre,$desc,$precio,$stock,$imagen,$disp,$id_cat,$fav,$est);
-    mysqli_stmt_execute($stmt);
-    $msg = "Producto creado correctamente ✅";
+
+    if ($nombre === '' || $precio < 0 || $stock < 0) {
+        $msg = "Completa correctamente nombre, precio y stock.";
+        $msg_tipo = 'error';
+    } else {
+        $stmt = mysqli_prepare($conexion,
+            "INSERT INTO productos (nombre,descripcion,precio,stock,imagen,disponible,id_categoria,favorito,estrella) VALUES (?,?,?,?,?,?,?,?,?)");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt,"ssdisiiii",$nombre,$desc,$precio,$stock,$imagen,$disp,$id_cat,$fav,$est);
+            if (mysqli_stmt_execute($stmt)) {
+                $msg = "Producto creado correctamente ✅";
+                $msg_tipo = 'success';
+            } else {
+                $msg = "Error al crear el producto. Intenta nuevamente.";
+                $msg_tipo = 'error';
+            }
+            mysqli_stmt_close($stmt);
+        } else {
+            $msg = "Error interno al preparar la consulta.";
+            $msg_tipo = 'error';
+        }
+    }
 }
 
 // EDITAR
 if (isset($_POST['editar'])) {
     $id = intval($_POST['id_producto']);
-    $nombre = $_POST['nombre'];
-    $desc = $_POST['descripcion'];
-    $precio = floatval($_POST['precio']);
-    $stock = intval($_POST['stock']);
-    $imagen = $_POST['imagen'];
-    $id_cat = intval($_POST['id_categoria']);
+    $nombre = trim($_POST['nombre'] ?? '');
+    $desc = trim($_POST['descripcion'] ?? '');
+    $precio = floatval($_POST['precio'] ?? 0);
+    $stock = intval($_POST['stock'] ?? 0);
+    $imagen = trim($_POST['imagen'] ?? '');
+    $id_cat = intval($_POST['id_categoria'] ?? 0);
     $disp = isset($_POST['disponible']) ? 1 : 0;
     $fav = isset($_POST['favorito']) ? 1 : 0;
     $est = isset($_POST['estrella']) ? 1 : 0;
-    $stmt = mysqli_prepare($conexion,
-        "UPDATE productos SET nombre=?,descripcion=?,precio=?,stock=?,imagen=?,disponible=?,id_categoria=?,favorito=?,estrella=? WHERE id_producto=?");
-    mysqli_stmt_bind_param($stmt,"ssdisiiiii",$nombre,$desc,$precio,$stock,$imagen,$disp,$id_cat,$fav,$est,$id);
-    mysqli_stmt_execute($stmt);
-    $msg = "Producto actualizado ✅";
+
+    if ($nombre === '' || $precio < 0 || $stock < 0) {
+        $msg = "Completa correctamente nombre, precio y stock.";
+        $msg_tipo = 'error';
+    } else {
+        $stmt = mysqli_prepare($conexion,
+            "UPDATE productos SET nombre=?,descripcion=?,precio=?,stock=?,imagen=?,disponible=?,id_categoria=?,favorito=?,estrella=? WHERE id_producto=?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt,"ssdisiiiii",$nombre,$desc,$precio,$stock,$imagen,$disp,$id_cat,$fav,$est,$id);
+            if (mysqli_stmt_execute($stmt)) {
+                $msg = "Producto actualizado ✅";
+                $msg_tipo = 'success';
+            } else {
+                $msg = "Error al actualizar el producto. Intenta nuevamente.";
+                $msg_tipo = 'error';
+            }
+            mysqli_stmt_close($stmt);
+        } else {
+            $msg = "Error interno al preparar la consulta.";
+            $msg_tipo = 'error';
+        }
+    }
 }
 
 // ELIMINAR
@@ -85,7 +120,9 @@ $categorias = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias 
 </div>
 
 <?php if($msg): ?>
-<div class="alert-dark-success"><i class="fas fa-check-circle"></i> <?php echo $msg; ?></div>
+<div class="alert-dark-success" style="<?php echo $msg_tipo==='error' ? 'background:rgba(244,67,54,.12);border-color:rgba(244,67,54,.3);color:#ef9a9a;' : ''; ?>">
+    <i class="fas <?php echo $msg_tipo==='error' ? 'fa-triangle-exclamation' : 'fa-check-circle'; ?>"></i> <?php echo $msg; ?>
+</div>
 <?php endif; ?>
 
 <!-- FORMULARIO -->

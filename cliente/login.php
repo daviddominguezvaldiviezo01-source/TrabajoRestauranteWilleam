@@ -1,9 +1,18 @@
 <?php
 session_start();
-include(__DIR__ . '/../conexion.php');
+require_once dirname(__FILE__) . '/../conexion.php';
 
 $error = '';
 $tab = 'login';
+$next = trim($_GET['next'] ?? $_POST['next'] ?? '');
+if ($next !== '' && (strpos($next, '..') !== false || strpos($next, '://') !== false)) {
+    $next = '';
+}
+$session_error = '';
+if (isset($_SESSION['error'])) {
+    $session_error = $_SESSION['error'];
+    unset($_SESSION['error']);
+}
 
 if(isset($_POST['login'])){
     $correo = trim($_POST['correo']);
@@ -31,13 +40,14 @@ if(isset($_POST['login'])){
                 $_SESSION['usuario'] = $usuario['id_usuario'];
                 $_SESSION['nombre']  = $usuario['nombre'];
                 $_SESSION['rol']     = $usuario['rol'];
-                $basePath = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-                if($usuario['rol']=='admin') {
-                    header("Location: $basePath/../admin/dashboard.php");
-                } elseif($usuario['rol']=='delivery') {
-                    header("Location: $basePath/../delivery.php");
+                if ($usuario['rol'] === 'admin') {
+                    header("Location: ../admin/dashboard.php");
+                } elseif ($usuario['rol'] === 'delivery') {
+                    header("Location: ../delivery.php");
+                } elseif (!empty($next)) {
+                    header("Location: " . $next);
                 } else {
-                    header("Location: $basePath/index.php");
+                    header("Location: index.php");
                 }
                 exit();
             } else { $error = "Correo o contraseña incorrectos"; }
@@ -66,19 +76,15 @@ if(isset($_POST['registro'])){
             if(mysqli_stmt_execute($si)){
                 $_SESSION['usuario']=mysqli_insert_id($conexion);
                 $_SESSION['nombre']=$nombre; $_SESSION['rol']='cliente';
-                header("Location: index.php"); exit();
+                if (!empty($next)) {
+                    header("Location: " . $next);
+                } else {
+                    header("Location: index.php");
+                }
+                exit();
             } else { $error="Error al registrarse."; }
         }
     }
-}
-
-if(isset($_GET['invitado'])){ $_SESSION['invitado']=true; header("Location: carrito.php"); exit(); }
-
-$boton_volver = 'index.php';
-$texto_volver = 'Volver al menú';
-if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'delivery') {
-    $boton_volver = '../delivery.php';
-    $texto_volver = 'Volver a Delivery';
 }
 ?>
 <!DOCTYPE html>
@@ -87,6 +93,7 @@ if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'delivery') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ingresar - Brisamar</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -217,7 +224,7 @@ body {
 <nav class="navbar-top">
     <div class="navbar-inner">
         <a href="index.php" class="logo"><i class="fas fa-fire" style="color:#ffcc00;"></i> Brisamar</a>
-        <a href="<?php echo $boton_volver; ?>" class="btn-nav-back"><i class="fas fa-arrow-left"></i> <?php echo $texto_volver; ?></a>
+        <a href="index.php" class="btn-nav-back"><i class="fas fa-arrow-left"></i> Volver al menú</a>
     </div>
 </nav>
 
@@ -234,7 +241,7 @@ body {
                     <div class="feature-item"><i class="fas fa-check"></i> Pedidos en línea rápidos</div>
                     <div class="feature-item"><i class="fas fa-check"></i> Múltiples métodos de pago</div>
                     <div class="feature-item"><i class="fas fa-check"></i> Historial de pedidos</div>
-                    <div class="feature-item"><i class="fas fa-check"></i> Compra como invitado disponible</div>
+                    <div class="feature-item"><i class="fas fa-check"></i> Compra segura solo con cuenta registrada</div>
                 </div>
             </div>
             <div class="auth-left-footer">© 2024 Brisamar. Todos los derechos reservados.</div>
@@ -256,11 +263,15 @@ body {
                 <h3>Bienvenido de nuevo</h3>
                 <p class="sub">Ingresa con tu cuenta para continuar</p>
 
+                <?php if(!empty($session_error)): ?>
+                <div class="alert-err"><i class="fas fa-exclamation-circle"></i> <?php echo $session_error; ?></div>
+                <?php endif; ?>
                 <?php if($tab==='login' && !empty($error)): ?>
                 <div class="alert-err"><i class="fas fa-exclamation-circle"></i> <?php echo $error; ?></div>
                 <?php endif; ?>
 
                 <form method="POST">
+                    <input type="hidden" name="next" value="<?php echo htmlspecialchars($next); ?>">
                     <div class="form-group">
                         <label>Correo electrónico</label>
                         <input type="email" name="correo" placeholder="tu@email.com" required>
@@ -271,7 +282,6 @@ body {
                     </div>
                     <button type="submit" name="login" class="btn-submit">Ingresar</button>
                 </form>
-                <a href="?invitado=1" class="btn-guest"><i class="fas fa-user-secret"></i> Continuar como invitado</a>
             </div>
 
             <!-- REGISTRO -->
@@ -284,6 +294,7 @@ body {
                 <?php endif; ?>
 
                 <form method="POST">
+                    <input type="hidden" name="next" value="<?php echo htmlspecialchars($next); ?>">
                     <div class="form-group">
                         <label>Nombre completo</label>
                         <input type="text" name="nombre" placeholder="Juan Pérez" required>

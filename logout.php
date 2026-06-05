@@ -1,28 +1,9 @@
 <?php
-/**
- * ============================================================
- * ARCHIVO: logout.php
- * ============================================================
- * DESCRIPCIÓN: Cierra la sesión del usuario de forma segura
- * Limpia todas las variables de sesión y cookies
- * ============================================================
- */
 
-// Incluir funciones de seguridad
-require_once __DIR__ . '/includes/security.php';
+session_start();
 
-// Iniciar sesión para poder destruirla
-iniciar_sesion_segura();
+session_destroy();
 
-// Registrar la actividad antes de cerrar sesión
-if (isset($_SESSION['usuario'])) {
-    registrar_actividad('Logout - Usuario: ' . $_SESSION['nombre'], 'info');
-}
+header("Location:index.php");
 
-// Cerrar sesión de forma segura
-cerrar_sesion();
-
-// Redirigir a página de inicio
-header('Location: index.php');
-exit();
 ?>

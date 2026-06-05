@@ -1,18 +1,16 @@
 <?php
-/**
- * ============================================================
- * ARCHIVO: conexion.php
- * ============================================================
- * DESCRIPCIÓN: Punto de entrada para conexión a la base de datos
- * Este archivo ahora usa la configuración centralizada
- * para mayor seguridad y mantenibilidad
- * ============================================================
- */
 
-// Incluir configuración y conexión segura
-require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/config/database.php';
+$host     = "localhost";
+$usuario  = "root";
+$password = "";
+$bd       = "restaurant_bd";
 
-// Nota: $conexion está disponible automáticamente después de incluir database.php
-// También están disponibles todas las constantes de config.php
+$conexion = mysqli_connect($host, $usuario, $password, $bd);
+
+if (!$conexion) {
+    die("Error de conexión: " . mysqli_connect_error());
+}
+
+mysqli_set_charset($conexion, "utf8mb4");
+
 ?>
