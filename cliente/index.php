@@ -46,13 +46,17 @@ while ($anuncio = mysqli_fetch_assoc($resultadoAnuncios)) {
 }
 
 // Detectar imagen del hero
+// Base URL dinámico (evita hardcode del nombre de carpeta)
+$baseUrl = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/\\');
+
+// Detectar imagen del hero
 $heroImage = '';
 $heroDir = __DIR__ . '/../images/hero/';
 if (is_dir($heroDir)) {
     $files = scandir($heroDir);
     foreach ($files as $file) {
         if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif'])) {
-            $heroImage = '/RESTAURANTE2/images/hero/' . $file;
+            $heroImage = $baseUrl . '/images/hero/' . $file;
             break;
         }
     }
@@ -944,10 +948,10 @@ footer {
             <article class="promo-card">
                 <?php if(!empty($anuncio['enlace'])): ?>
                     <a href="<?php echo htmlspecialchars($anuncio['enlace']); ?>">
-                        <img src="/RESTAURANTE2/<?php echo htmlspecialchars($anuncio['imagen']); ?>" alt="Promoción">
+                        <img src="<?php echo htmlspecialchars($baseUrl . '/' . ltrim($anuncio['imagen'], '/')); ?>" alt="Promoción">
                     </a>
                 <?php else: ?>
-                    <img src="/RESTAURANTE2/<?php echo htmlspecialchars($anuncio['imagen']); ?>" alt="Promoción">
+                    <img src="<?php echo htmlspecialchars($baseUrl . '/' . ltrim($anuncio['imagen'], '/')); ?>" alt="Promoción">
                 <?php endif; ?>
             </article>
             <?php endforeach; ?>
