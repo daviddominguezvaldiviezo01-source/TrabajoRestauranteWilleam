@@ -1,9 +1,27 @@
 <?php
 session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
+require_once dirname(__FILE__) . '/../includes/functions.php';
 
 $total = 0;
 $items = [];
+
+$id_usuario = isset($_SESSION['usuario']) ? intval($_SESSION['usuario']) : null;
+$mis_pedidos = [];
+if ($id_usuario) {
+    $mis_pedidos = obtener_pedidos_cliente($id_usuario);
+}
+
+// Validar que el usuario no sea admin o delivery
+if (isset($_SESSION['rol']) && in_array($_SESSION['rol'], ['admin', 'delivery'])) {
+    $_SESSION['error'] = 'Los administradores y repartidores no pueden hacer pedidos.';
+    if ($_SESSION['rol'] === 'admin') {
+        header('Location: ../admin/dashboard.php');
+    } else {
+        header('Location: ../delivery.php');
+    }
+    exit();
+}
 
 if (isset($_SESSION['carrito']) && count($_SESSION['carrito']) > 0) {
     foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
@@ -19,6 +37,20 @@ if (isset($_SESSION['carrito']) && count($_SESSION['carrito']) > 0) {
         }
     }
 }
+
+function imagen_producto_valida($rutaImagen) {
+    if (empty($rutaImagen)) {
+        return false;
+    }
+
+    if (preg_match('#^https?://#i', $rutaImagen)) {
+        return true;
+    }
+
+    $rutaServidor = __DIR__ . '/../' . ltrim($rutaImagen, '/');
+    return is_file($rutaServidor);
+}
+
 $totalCarrito = isset($_SESSION['carrito']) ? array_sum($_SESSION['carrito']) : 0;
 ?>
 <!DOCTYPE html>
@@ -109,6 +141,64 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
 .empty-cart i { font-size:5rem; display:block; margin-bottom:20px; }
 .empty-cart h3 { font-size:1.3rem; margin-bottom:8px; }
 .empty-cart p { font-size:14px; margin-bottom:24px; }
+
+.order-section {
+    margin-top:40px;
+    background:#1e1e1e;
+    border:1px solid #2a2a2a;
+    border-radius:20px;
+    padding:24px;
+}
+.order-section h2 {
+    font-size:1.2rem;
+    font-weight:800;
+    margin-bottom:18px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.order-card {
+    background:#111;
+    border:1px solid #2a2a2a;
+    border-radius:16px;
+    padding:18px 20px;
+    margin-bottom:16px;
+}
+.order-card:last-child { margin-bottom:0; }
+.order-card .order-line {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+}
+.order-card .order-line span { color:rgba(255,255,255,.8); font-size:14px; }
+.order-card .order-details {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(180px,1fr));
+    gap:10px;
+    color:rgba(255,255,255,.65);
+    font-size:13px;
+}
+.order-card .order-details span { display:block; }
+.status-badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    text-transform:capitalize;
+}
+.status-pendiente { background:rgba(255,193,7,.15); color:#ffc107; }
+.status-ir-a-recoger { background:rgba(0,123,255,.12); color:#65a5ff; }
+.status-en-camino { background:rgba(13,110,253,.12); color:#8ec9ff; }
+.status-entregado { background:rgba(25,135,84,.12); color:#7dd19d; }
+.status-cancelado { background:rgba(220,53,69,.12); color:#ff6b7a; }
+.order-empty { color:rgba(255,255,255,.55); font-size:14px; }
 </style>
 </head>
 <body>
@@ -130,6 +220,27 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
     <?php endif; ?>
 
     <div class="page-title"><i class="fas fa-shopping-bag" style="color:#c8102e;"></i> Mi Carrito</div>
+
+    <?php if(!empty($mis_pedidos)): ?>
+    <div class="order-section">
+        <h2><i class="fas fa-list"></i> Mis pedidos recientes</h2>
+        <?php foreach($mis_pedidos as $pedido): ?>
+            <?php $clase_estado = 'status-' . str_replace(' ', '-', trim($pedido['estado'])); ?>
+            <div class="order-card">
+                <div class="order-line">
+                    <span><strong>Pedido #<?php echo intval($pedido['id_pedido']); ?></strong></span>
+                    <span class="status-badge <?php echo htmlspecialchars($clase_estado); ?>"><?php echo htmlspecialchars(ucfirst($pedido['estado'])); ?></span>
+                </div>
+                <div class="order-details">
+                    <span><strong>Total:</strong> S/ <?php echo number_format($pedido['total'],2); ?></span>
+                    <span><strong>Método:</strong> <?php echo htmlspecialchars(ucfirst($pedido['metodo'] ?? 'efectivo')); ?></span>
+                    <span><strong>Pago:</strong> <?php echo htmlspecialchars(ucfirst($pedido['estado_pago'] ?? 'pendiente')); ?></span>
+                    <span><strong>Dirección:</strong> <?php echo htmlspecialchars($pedido['direccion'] ?? 'No definida'); ?></span>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 
     <?php if(empty($items)): ?>
     <div class="empty-cart">
@@ -155,7 +266,8 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
         <?php foreach($items as $item): ?>
         <tr>
             <td>
-                <?php if(!empty($item['producto']['imagen'])): ?>
+                <?php $imagenValida = imagen_producto_valida($item['producto']['imagen'] ?? ''); ?>
+                <?php if ($imagenValida): ?>
                     <img src="<?php echo htmlspecialchars($item['producto']['imagen']); ?>"
                          class="prod-thumb"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -195,6 +307,7 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
     </div>
 
     <?php endif; ?>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

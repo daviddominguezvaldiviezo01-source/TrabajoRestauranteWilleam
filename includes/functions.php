@@ -316,6 +316,42 @@ function obtener_pedidos_delivery($id_repartidor, $estado = 'ir a recoger') {
 }
 
 // ──────────────────────────────────────────────────────────
+// OBTENER PEDIDOS DE UN CLIENTE
+// ──────────────────────────────────────────────────────────
+
+/**
+ * Obtiene los pedidos realizados por un cliente.
+ *
+ * @global mysqli $conexion - Conexión a la base de datos
+ * @param int $id_usuario - ID del usuario cliente
+ * @return array Lista de pedidos del cliente
+ */
+function obtener_pedidos_cliente($id_usuario) {
+    global $conexion;
+
+    $id_usuario = (int) $id_usuario;
+    $stmt = mysqli_prepare($conexion,
+        "SELECT p.*, d.direccion, d.referencia, pg.metodo, pg.estado AS estado_pago
+         FROM pedidos p
+         LEFT JOIN direcciones d ON p.id_direccion = d.id_direccion
+         LEFT JOIN pagos pg ON p.id_pedido = pg.id_pedido
+         WHERE p.id_usuario = ?
+         ORDER BY p.id_pedido DESC");
+
+    if (!$stmt) {
+        return [];
+    }
+
+    mysqli_stmt_bind_param($stmt, 'i', $id_usuario);
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
+    $pedidos = mysqli_fetch_all($resultado, MYSQLI_ASSOC);
+    mysqli_stmt_close($stmt);
+
+    return $pedidos;
+}
+
+// ──────────────────────────────────────────────────────────
 // OBTENER ITEMS DE UN PEDIDO
 // ──────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
+require_once dirname(__FILE__) . '/../config/config.php';
 
 $id_usuario = isset($_SESSION['usuario']) ? intval($_SESSION['usuario']) : null;
 
@@ -81,18 +82,19 @@ $items_carrito = [];
 
 foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
     $id = intval($id_producto);
+    $cantidad = intval($cantidad);
     $stmt = mysqli_prepare($conexion, "SELECT id_producto, nombre, precio, stock FROM productos WHERE id_producto = ?");
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
-    
+
     if ($fila = mysqli_fetch_assoc($res)) {
         if ($fila['stock'] < $cantidad) {
             $_SESSION['error'] = "Producto " . htmlspecialchars($fila['nombre']) . " sin stock suficiente";
             header("Location: carrito.php");
             exit();
         }
-        $subtotal = $fila['precio'] * $cantidad;
+        $subtotal = round(floatval($fila['precio']) * $cantidad, 2);
         $total += $subtotal;
         $items_carrito[] = [
             'id_producto' => $id,
@@ -104,13 +106,16 @@ foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
     }
 }
 
+$total = round($total, 2);
 // Aplicar cálculos de impuesto y delivery
-$impuesto = $total * 0.18; // 18% IGV
-$delivery = 5; // Costo fijo
-$total_con_impuesto = $total + $impuesto + $delivery;
+$impuesto = round($total * 0.18, 2); // 18% IGV
+$delivery = 5.00; // Costo fijo
+$total_con_impuesto = round($total + $impuesto + $delivery, 2);
 
 // Insertar pedido (evitar columnas inexistentes)
-$estado_pedido = 'pendiente';
+// Determinar estado inicial según tipo de entrega (si el cliente elige "ir a recoger")
+$tipo_entrega = trim($_POST['tipo_entrega'] ?? 'domicilio');
+$estado_pedido = ($tipo_entrega === 'ir a recoger') ? 'ir a recoger' : 'pendiente';
 
 // Comprobar si existen columnas para datos de cliente en pedidos
 $has_guest_columns = false;
@@ -171,6 +176,20 @@ unset($_SESSION['invitado']);
 
 if (!isset($_SESSION['mensaje']) && !isset($_SESSION['error'])) {
     $_SESSION['mensaje'] = "¡Pedido #$id_pedido realizado con éxito! 🎉";
+}
+
+// Intento de envío server-side (fallback) si está habilitado en config
+$server_send_result = null;
+if (defined('MAIL_ENABLED') && MAIL_ENABLED) {
+    require_once __DIR__ . '/../tools/send_server_email.php';
+    $subject = "Nuevo pedido #$id_pedido - " . SITE_NAME;
+    $items_text = '';
+    foreach ($items_carrito as $it) {
+        $items_text .= $it['nombre'] . ' x ' . $it['cantidad'] . "\n";
+    }
+    $body = "Nuevo pedido (#$id_pedido)\nCliente: $nombre\nEmail: $correo\nTotal: S/ " . number_format($total_con_impuesto,2) . "\nItems:\n" . $items_text;
+    $res_send = send_server_email(NOTIFICATION_RECIPIENT_EMAIL, $subject, nl2br(htmlspecialchars($body)), $body);
+    $server_send_result = $res_send;
 }
 ?>
 <!DOCTYPE html>
@@ -298,3 +317,26 @@ setInterval(()=>{ t--; if(el) el.textContent=t; },1000);
 
 </body>
 </html>
+
+<!-- EmailJS: enviar notificación al propietario/administrador -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+    (function(){
+        try{
+            emailjs.init('<?php echo EMAILJS_USER_ID; ?>');
+        }catch(e){ console.warn('EmailJS init error', e); }
+
+        var templateParams = {
+            to_email: '<?php echo NOTIFICATION_RECIPIENT_EMAIL; ?>',
+            order_id: '<?php echo $id_pedido; ?>',
+            total: '<?php echo number_format($total_con_impuesto,2); ?>',
+            customer: '<?php echo htmlspecialchars($nombre, ENT_QUOTES); ?>',
+            items: <?php echo json_encode($items_carrito, JSON_HEX_APOS|JSON_HEX_QUOT); ?>
+        };
+
+        // Intentar enviar el email. Ajusta SERVICE_ID y TEMPLATE_ID en config/config.php
+        emailjs.send('<?php echo EMAILJS_SERVICE_ID; ?>','<?php echo EMAILJS_TEMPLATE_ID; ?>', templateParams)
+            .then(function(){ console.log('Notificación enviada por EmailJS'); })
+            .catch(function(err){ console.error('Error EmailJS:', err); });
+    })();
+</script>

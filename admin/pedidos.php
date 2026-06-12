@@ -20,6 +20,11 @@ if (!in_array($filtro_estado, $estados_validos, true)) {
     $filtro_estado = '';
 }
 
+// Paginación
+$items_por_pagina = 10;
+$pagina_actual = max(1, intval($_GET['pag'] ?? 1));
+$offset = ($pagina_actual - 1) * $items_por_pagina;
+
 if (isset($_POST['cambiar_estado'])) {
     $id_pedido = intval($_POST['id_pedido'] ?? 0);
     $estado = trim($_POST['estado'] ?? '');
@@ -93,18 +98,40 @@ if ($has_guest_columns) {
 }
 
 if ($filtro_estado !== '') {
-    $stmtPedidos = mysqli_prepare($conexion, $sqlBase . " WHERE p.estado = ? ORDER BY p.fecha DESC");
+    $stmtPedidos = mysqli_prepare($conexion, $sqlBase . " WHERE p.estado = ? ORDER BY p.fecha DESC LIMIT ? OFFSET ?");
     if ($stmtPedidos) {
-        mysqli_stmt_bind_param($stmtPedidos, 's', $filtro_estado);
+        mysqli_stmt_bind_param($stmtPedidos, 'sii', $filtro_estado, $items_por_pagina, $offset);
         mysqli_stmt_execute($stmtPedidos);
         $pedidos = mysqli_stmt_get_result($stmtPedidos);
         mysqli_stmt_close($stmtPedidos);
     } else {
-        $pedidos = mysqli_query($conexion, $sqlBase . " ORDER BY p.fecha DESC");
+        $pedidos = mysqli_query($conexion, $sqlBase . " ORDER BY p.fecha DESC LIMIT $items_por_pagina OFFSET $offset");
+    }
+    
+    // Contar total de registros para paginación
+    $countStmt = mysqli_prepare($conexion, "SELECT COUNT(*) as total FROM pedidos WHERE estado = ?");
+    if ($countStmt) {
+        mysqli_stmt_bind_param($countStmt, 's', $filtro_estado);
+        mysqli_stmt_execute($countStmt);
+        $countResult = mysqli_stmt_get_result($countStmt);
+        $countRow = mysqli_fetch_assoc($countResult);
+        $total_pedidos = $countRow['total'];
+        mysqli_stmt_close($countStmt);
+    } else {
+        $countResult = mysqli_query($conexion, "SELECT COUNT(*) as total FROM pedidos WHERE estado = '$filtro_estado'");
+        $countRow = mysqli_fetch_assoc($countResult);
+        $total_pedidos = $countRow['total'];
     }
 } else {
-    $pedidos = mysqli_query($conexion, $sqlBase . " ORDER BY p.fecha DESC");
+    $pedidos = mysqli_query($conexion, $sqlBase . " ORDER BY p.fecha DESC LIMIT $items_por_pagina OFFSET $offset");
+    
+    // Contar total de registros para paginación
+    $countResult = mysqli_query($conexion, "SELECT COUNT(*) as total FROM pedidos");
+    $countRow = mysqli_fetch_assoc($countResult);
+    $total_pedidos = $countRow['total'];
 }
+
+$total_paginas = ceil($total_pedidos / $items_por_pagina);
 
 $detalle_pedido = null; $detalle_items = [];
 if (isset($_GET['id'])) {
@@ -239,7 +266,10 @@ $active_page = 'pedidos';
                 <label>Asignar repartidor</label>
                 <select name="id_repartidor" style="width:100%;">
                     <option value="">Sin asignar</option>
-                    <?php while($rep = mysqli_fetch_assoc($repartidores)): ?>
+                    <?php 
+                    $repartidores_detalle = mysqli_query($conexion, "SELECT id_usuario, nombre, email FROM usuarios WHERE rol='delivery' ORDER BY nombre");
+                    while($rep = mysqli_fetch_assoc($repartidores_detalle)): 
+                    ?>
                         <option value="<?php echo $rep['id_usuario']; ?>" <?php if($detalle_pedido['id_repartidor'] == $rep['id_usuario']) echo 'selected'; ?>><?php echo htmlspecialchars($rep['nombre'] . ' (' . $rep['email'] . ')'); ?></option>
                     <?php endwhile; ?>
                 </select>
@@ -271,6 +301,67 @@ $active_page = 'pedidos';
                 <?php endwhile; ?>
             </tbody>
         </table>
+        
+        <!-- PAGINACIÓN -->
+        <?php if($total_paginas > 1): ?>
+        <div class="pagination-wrapper" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+            <!-- Anterior -->
+            <?php if($pagina_actual > 1): ?>
+                <a href="pedidos.php?pag=<?php echo $pagina_actual-1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn" style="padding:8px 12px;border:1px solid #444;border-radius:6px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </a>
+            <?php else: ?>
+                <span style="padding:8px 12px;border:1px solid #333;border-radius:6px;color:#666;background:#0a0a0a;cursor:not-allowed;">
+                    <i class="fas fa-chevron-left"></i> Anterior
+                </span>
+            <?php endif; ?>
+            
+            <!-- Números de página -->
+            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
+                <?php 
+                $inicio = max(1, $pagina_actual - 2);
+                $fin = min($total_paginas, $pagina_actual + 2);
+                
+                if($inicio > 1): ?>
+                    <a href="pedidos.php?pag=1<?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;">1</a>
+                    <?php if($inicio > 2): ?>
+                        <span style="padding:6px 8px;color:#666;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                
+                <?php for($p = $inicio; $p <= $fin; $p++): ?>
+                    <?php if($p == $pagina_actual): ?>
+                        <span style="padding:6px 10px;border:1px solid #c8102e;border-radius:4px;background:#c8102e;color:#fff;font-weight:700;"><?php echo $p; ?></span>
+                    <?php else: ?>
+                        <a href="pedidos.php?pag=<?php echo $p; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;" onmouseover="this.style.borderColor='#c8102e';this.style.color='#c8102e';" onmouseout="this.style.borderColor='#444';this.style.color='#fff';"><?php echo $p; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                
+                <?php if($fin < $total_paginas): ?>
+                    <?php if($fin < $total_paginas - 1): ?>
+                        <span style="padding:6px 8px;color:#666;">...</span>
+                    <?php endif; ?>
+                    <a href="pedidos.php?pag=<?php echo $total_paginas; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;"><?php echo $total_paginas; ?></a>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Siguiente -->
+            <?php if($pagina_actual < $total_paginas): ?>
+                <a href="pedidos.php?pag=<?php echo $pagina_actual+1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn" style="padding:8px 12px;border:1px solid #444;border-radius:6px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </a>
+            <?php else: ?>
+                <span style="padding:8px 12px;border:1px solid #333;border-radius:6px;color:#666;background:#0a0a0a;cursor:not-allowed;">
+                    Siguiente <i class="fas fa-chevron-right"></i>
+                </span>
+            <?php endif; ?>
+            
+            <!-- Info -->
+            <div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;margin-left:auto;margin-right:auto;width:100%;">
+                Página <?php echo $pagina_actual; ?> de <?php echo $total_paginas; ?> (<?php echo $total_pedidos; ?> pedidos)
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

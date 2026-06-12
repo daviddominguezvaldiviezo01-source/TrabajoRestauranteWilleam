@@ -2,6 +2,14 @@
 session_start();
 require_once dirname(dirname(__FILE__)) . '/conexion.php';
 
+// Validar que el usuario no sea admin o delivery (no pueden acceder a cliente)
+if (isset($_SESSION['rol']) && in_array($_SESSION['rol'], ['admin', 'delivery'])) {
+    session_destroy();
+    $_SESSION = [];
+    header('Location: login.php');
+    exit();
+}
+
 mysqli_query($conexion, "CREATE TABLE IF NOT EXISTS anuncios (
     id_anuncio INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(120) DEFAULT NULL,
@@ -22,11 +30,11 @@ if (isset($_GET['categoria']) && $_GET['categoria'] != "") {
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
             WHERE p.id_categoria = $id_categoria AND p.disponible = 1
             ORDER BY p.id_producto DESC";
-    $categoriaRes = mysqli_query($conexion, "SELECT nombre FROM categorias WHERE id_categoria = $id_categoria LIMIT 1");
-    if ($categoriaRes && mysqli_num_rows($categoriaRes) > 0) {
-        $categoriaSeleccionada = mysqli_fetch_assoc($categoriaRes)['nombre'];
-    }
-} else {
+        $categoriaRes = mysqli_query($conexion, "SELECT nombre FROM categorias WHERE id_categoria = $id_categoria LIMIT 1");
+        if ($categoriaRes && mysqli_num_rows($categoriaRes) > 0) {
+            $categoriaSeleccionada = mysqli_fetch_assoc($categoriaRes)['nombre'];
+        }
+    } else {
     $sql = "SELECT p.*, c.nombre AS nombre_categoria
             FROM productos p
             LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
@@ -39,10 +47,31 @@ $resCat          = mysqli_query($conexion, "SELECT * FROM categorias ORDER BY no
 $totalCarrito    = isset($_SESSION['carrito']) ? array_sum($_SESSION['carrito']) : 0;
 $resultadoFavoritos = mysqli_query($conexion, "SELECT p.*, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.favorito = 1 AND p.disponible = 1 LIMIT 8");
 $resultadoEstrellas = mysqli_query($conexion, "SELECT p.*, c.nombre AS nombre_categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.estrella = 1 AND p.disponible = 1 LIMIT 8");
+function imagen_valida_promocion($rutaImagen) {
+    $rutaImagen = trim($rutaImagen);
+    if ($rutaImagen === '') {
+        return false;
+    }
+
+    if (filter_var($rutaImagen, FILTER_VALIDATE_URL)) {
+        $headers = @get_headers($rutaImagen, 1);
+        if (!$headers || strpos($headers[0], '200') === false) {
+            return false;
+        }
+        $contentType = is_array($headers['Content-Type']) ? end($headers['Content-Type']) : $headers['Content-Type'];
+        return is_string($contentType) && stripos($contentType, 'image/') === 0;
+    }
+
+    $rutaServidor = __DIR__ . '/../' . ltrim($rutaImagen, '/\\');
+    return is_file($rutaServidor) && @getimagesize($rutaServidor) !== false;
+}
+
 $resultadoAnuncios = mysqli_query($conexion, "SELECT * FROM anuncios WHERE activo = 1 ORDER BY creado_en DESC LIMIT 5");
 $anuncios = [];
 while ($anuncio = mysqli_fetch_assoc($resultadoAnuncios)) {
-    $anuncios[] = $anuncio;
+    if (imagen_valida_promocion($anuncio['imagen'])) {
+        $anuncios[] = $anuncio;
+    }
 }
 
 // Detectar imagen del hero
@@ -380,8 +409,8 @@ body {
 .promo-track {
     display: flex;
     gap: 16px;
-    justify-content: center;
-    transition: transform .8s ease;
+    justify-content: flex-start;
+    transition: transform .6s ease;
     will-change: transform;
 }
 .promo-card {
@@ -389,13 +418,15 @@ body {
     width: min(46%, 420px);
     max-width: 100%;
     flex-shrink: 0;
-    position: relative;
-    aspect-ratio: 4 / 3;
     overflow: hidden;
     border-radius: 16px;
     box-shadow: 0 8px 25px rgba(0,0,0,.3);
     min-height: 260px;
-    max-height: 360px;
+    max-height: 55vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
 }
 .promo-card a {
     display: block;
@@ -405,11 +436,12 @@ body {
 .promo-card img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform .4s ease;
+    object-fit: contain;
+    display: block;
+    transition: none;
 }
 .promo-card:hover img {
-    transform: scale(1.05);
+    transform: none;
 }
 .promo-dots {
     display: flex;
@@ -497,12 +529,13 @@ body {
 .cats-inner {
     display: flex;
     gap: 0;
-    max-width: 1300px;
-    margin: 0 auto;
+    min-width: max-content;
+    margin: 0;
     padding: 0 20px;
 }
 
 .cat-tab {
+    flex: 0 0 auto;
     color: rgba(255,255,255,.55);
     text-decoration: none;
     font-size: 14px;
@@ -946,12 +979,13 @@ footer {
         <div class="promo-track">
             <?php foreach($anuncios as $anuncio): ?>
             <article class="promo-card">
+                <?php $promoSrc = htmlspecialchars($baseUrl . '/' . ltrim($anuncio['imagen'], '/')); ?>
                 <?php if(!empty($anuncio['enlace'])): ?>
                     <a href="<?php echo htmlspecialchars($anuncio['enlace']); ?>">
-                        <img src="<?php echo htmlspecialchars($baseUrl . '/' . ltrim($anuncio['imagen'], '/')); ?>" alt="Promoción">
+                        <img src="<?php echo $promoSrc; ?>" alt="Promoción" onerror="handlePromoImageError(this)">
                     </a>
                 <?php else: ?>
-                    <img src="<?php echo htmlspecialchars($baseUrl . '/' . ltrim($anuncio['imagen'], '/')); ?>" alt="Promoción">
+                    <img src="<?php echo $promoSrc; ?>" alt="Promoción" onerror="handlePromoImageError(this)">
                 <?php endif; ?>
             </article>
             <?php endforeach; ?>
@@ -1148,7 +1182,7 @@ footer {
         </div>
         <div>
             <h5>Legal</h5>
-            <a href="#">Términos y Condiciones</a>
+            <a href="terminos.php">Términos y Condiciones</a>
             <a href="#">Política de Privacidad</a>
             <a href="#">Libro de Reclamaciones</a>
         </div>
@@ -1190,46 +1224,83 @@ function filtrarProductos() {
 
 (function() {
     const track = document.querySelector('.promo-track');
-    const dots = document.querySelectorAll('.promo-dot');
-    const cards = document.querySelectorAll('.promo-card');
-    if (!track || !dots.length || !cards.length) return;
+    const carousel = document.querySelector('.promo-carousel');
+    const dotsContainer = document.querySelector('.promo-dots');
+    const section = document.querySelector('.promociones-section');
+    if (!track || !carousel || !dotsContainer || !section) return;
 
     let activeIndex = 0;
-    const totalCards = cards.length;
     let autoScrollTimer = null;
 
+    const getVisibleCards = () => Array.from(document.querySelectorAll('.promo-card'));
+
+    const updateDots = () => {
+        const visibleCards = getVisibleCards();
+        dotsContainer.innerHTML = '';
+        visibleCards.forEach((_, index) => {
+            const dot = document.createElement('span');
+            dot.className = 'promo-dot' + (index === activeIndex ? ' active' : '');
+            dot.dataset.index = index;
+            dot.addEventListener('click', () => {
+                activeIndex = index;
+                updatePosition();
+                restartAutoScroll();
+            });
+            dotsContainer.appendChild(dot);
+        });
+    };
+
     const updatePosition = () => {
-        const cardWidth = 50; // Cada card es 50% del viewport
-        const gapOffset = (16 / window.innerWidth) * 100; // Convertir gap a porcentaje
-        const offset = activeIndex * (cardWidth + (gapOffset / totalCards));
-        track.style.transform = `translateX(-${offset}%)`;
+        const visibleCards = getVisibleCards();
+        if (!visibleCards.length) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = '';
+        activeIndex = Math.min(activeIndex, visibleCards.length - 1);
+        const card = visibleCards[activeIndex];
+        const trackStyle = getComputedStyle(track);
+        const gapValue = parseFloat(trackStyle.gap || '16') || 16;
+        const offset = card.offsetLeft;
+        track.style.transform = `translateX(-${offset}px)`;
+        const dots = dotsContainer.querySelectorAll('.promo-dot');
         dots.forEach((dot, index) => dot.classList.toggle('active', index === activeIndex));
     };
 
-    const startAutoScroll = () => {
+    const restartAutoScroll = () => {
+        if (autoScrollTimer) clearInterval(autoScrollTimer);
         autoScrollTimer = setInterval(() => {
-            activeIndex = (activeIndex + 1) % totalCards;
+            const visibleCards = getVisibleCards();
+            if (!visibleCards.length) return;
+            activeIndex = (activeIndex + 1) % visibleCards.length;
             updatePosition();
         }, 4500);
     };
 
-    dots.forEach(dot => {
-        dot.addEventListener('click', () => {
-            activeIndex = Number(dot.dataset.index);
-            updatePosition();
-            clearInterval(autoScrollTimer);
-            startAutoScroll();
-        });
-    });
+    const refreshCarousel = () => {
+        const visibleCards = getVisibleCards();
+        if (!visibleCards.length) {
+            section.style.display = 'none';
+            return;
+        }
+        activeIndex = Math.min(activeIndex, visibleCards.length - 1);
+        updateDots();
+        updatePosition();
+    };
 
-    startAutoScroll();
+    window.handlePromoImageError = (img) => {
+        const card = img.closest('.promo-card');
+        if (card) {
+            card.remove();
+            refreshCarousel();
+        }
+    };
 
-    const carousel = document.querySelector('.promo-carousel');
     carousel.addEventListener('mouseenter', () => clearInterval(autoScrollTimer));
-    carousel.addEventListener('mouseleave', () => startAutoScroll());
-
-    window.addEventListener('resize', updatePosition);
-    updatePosition();
+    carousel.addEventListener('mouseleave', restartAutoScroll);
+    window.addEventListener('resize', refreshCarousel);
+    refreshCarousel();
+    restartAutoScroll();
 })();
 </script>
 </body>
