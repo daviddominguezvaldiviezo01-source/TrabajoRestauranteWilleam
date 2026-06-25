@@ -35,6 +35,49 @@ define('CONTACT_PHONE', '+51 999 999 999');
 /** @const string CONTACT_EMAIL - Email de contacto */
 define('CONTACT_EMAIL', 'info@brisamar.com');
 
+// ──────────────────────────────────────────────────────────
+// CONFIGURACIÓN DE EMAILJS (para envío de notificaciones por email)
+// Rellena estos valores con los datos que te proporciona EmailJS
+// Servicio: https://www.emailjs.com/ — crea un servicio, template y obtén tu user ID
+// ──────────────────────────────────────────────────────────
+/** @const string EMAILJS_USER_ID - User ID provisto por EmailJS */
+define('EMAILJS_USER_ID', 'tu_emailjs_user_id');
+
+/** @const string EMAILJS_SERVICE_ID - Service ID configurado en EmailJS */
+define('EMAILJS_SERVICE_ID', 'tu_emailjs_service_id');
+
+/** @const string EMAILJS_TEMPLATE_ID - Template ID configurado en EmailJS */
+define('EMAILJS_TEMPLATE_ID', 'tu_emailjs_template_id');
+
+/** @const string NOTIFICATION_RECIPIENT_EMAIL - Email destinatario de las notificaciones */
+define('NOTIFICATION_RECIPIENT_EMAIL', CONTACT_EMAIL);
+
+// ──────────────────────────────────────────────────────────
+// CONFIGURACIÓN MAIL SERVER (server-side fallback)
+// Si quieres envío server-side con SMTP, configura estos valores
+// ──────────────────────────────────────────────────────────
+/** @const bool MAIL_ENABLED - Habilita envío server-side con mail() */
+define('MAIL_ENABLED', false);
+
+/** @const string MAIL_FROM - Dirección FROM usada en emails */
+define('MAIL_FROM', CONTACT_EMAIL);
+
+/** @const string MAIL_FROM_NAME - Nombre remitente */
+define('MAIL_FROM_NAME', SITE_NAME);
+
+/** @const string SMTP_HOST - Host SMTP si usas SMTP (opcional) */
+define('SMTP_HOST', 'smtp.example.com');
+
+/** @const string SMTP_USER - Usuario SMTP (opcional) */
+define('SMTP_USER', 'user@example.com');
+
+/** @const string SMTP_PASS - Password SMTP (opcional) */
+define('SMTP_PASS', 'secret');
+
+/** @const int SMTP_PORT - Puerto SMTP (opcional) */
+define('SMTP_PORT', 587);
+
+
 /** @const string CONTACT_ADDRESS - Dirección física */
 define('CONTACT_ADDRESS', 'Calle Principal 123');
 

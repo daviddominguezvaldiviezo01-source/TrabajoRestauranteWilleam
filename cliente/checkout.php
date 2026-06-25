@@ -11,6 +11,17 @@ if (!$id_usuario) {
     exit();
 }
 
+// Validar que el usuario no sea admin o delivery
+if (isset($_SESSION['rol']) && in_array($_SESSION['rol'], ['admin', 'delivery'])) {
+    $_SESSION['error'] = 'Los administradores y repartidores no pueden hacer pedidos.';
+    if ($_SESSION['rol'] === 'admin') {
+        header('Location: ../admin/dashboard.php');
+    } else {
+        header('Location: ../delivery.php');
+    }
+    exit();
+}
+
 if (!isset($_SESSION['carrito']) || count($_SESSION['carrito']) == 0) {
     header("Location: carrito.php"); exit();
 }
@@ -25,14 +36,15 @@ foreach ($_SESSION['carrito'] as $id_producto => $cantidad) {
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     if ($fila = mysqli_fetch_assoc($res)) {
-        $subtotal = $fila['precio'] * $cantidad;
+        $subtotal = round(floatval($fila['precio']) * intval($cantidad), 2);
         $total += $subtotal;
         $items[] = ['producto' => $fila, 'cantidad' => $cantidad, 'subtotal' => $subtotal];
     }
 }
 
-$impuesto_total    = $total * $impuesto;
-$total_con_impuesto = $total + $impuesto_total + $delivery;
+$total = round($total, 2);
+$impuesto_total    = round($total * $impuesto, 2);
+$total_con_impuesto = round($total + $impuesto_total + $delivery, 2);
 
 $direcciones = [];
 $usuario_nombre = $usuario_email = $usuario_telefono = '';
@@ -278,6 +290,13 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
                         <h5>Código QR - Plin</h5>
                         <img src="../images/pago_QR.png" alt="QR Plin">
                         <p>Escanea este código con tu app Plin para completar el pago</p>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <label style="display:block;margin-bottom:8px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;">Tipo de entrega</label>
+                        <select name="tipo_entrega" style="width:100%;background:#111;border:1.5px solid #2a2a2a;border-radius:10px;padding:11px 14px;color:#fff;">
+                            <option value="domicilio">Envío a domicilio</option>
+                            <option value="ir a recoger">Ir a recoger (recoger en tienda)</option>
+                        </select>
                     </div>
                 </div>
 
