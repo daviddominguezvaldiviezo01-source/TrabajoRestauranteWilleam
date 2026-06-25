@@ -22,6 +22,10 @@ $descripcion = sanitizar($fila['descripcion'] ?? '');
 $precio = floatval($fila['precio'] ?? 0);
 $stock = intval($fila['stock'] ?? 0);
 $imagen = sanitizar($fila['imagen'] ?? '');
+// Si es ruta relativa (no URL externa), la resolvemos desde /cliente/
+if ($imagen !== '' && !preg_match('#^https?://#i', $imagen)) {
+    $imagen = '../' . ltrim($imagen, '/');
+}
 $categoria = sanitizar($fila['nombre_categoria'] ?? 'General');
 $disponible = intval($fila['disponible'] ?? 0);
 $favorito = intval($fila['favorito'] ?? 0);

@@ -192,9 +192,6 @@ body{background:#111;font-family:'Segoe UI',sans-serif;color:#fff;min-height:100
         <i class="fas fa-cog"></i> Configuración
     </a>
     <hr class="sidebar-sep">
-    <a href="../cliente/index.php">
-        <i class="fas fa-store"></i> Ver Tienda
-    </a>
     <a href="../logout.php" class="danger">
         <i class="fas fa-right-from-bracket"></i> Cerrar Sesión
     </a>
