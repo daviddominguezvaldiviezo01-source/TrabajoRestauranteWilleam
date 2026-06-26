@@ -6,7 +6,7 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:
 
 $msg = ''; $msg_tipo = 'success';
 
-/* ─── Función auxiliar: mueve la imagen subida y devuelve la ruta relativa ─── */
+
 function procesarImagenProducto($fileKey, &$error) {
     if (empty($_FILES[$fileKey]['name']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
         return null; // No se subió ningún archivo
@@ -54,7 +54,7 @@ if (isset($_POST['crear'])) {
             $msg = $errImg;
             $msg_tipo = 'error';
         } else {
-            $imagen = $imagen ?? ''; // si no subió imagen queda vacío
+            $imagen = $imagen ?? '';
             $stmt = mysqli_prepare($conexion,
                 "INSERT INTO productos (nombre,descripcion,precio,stock,imagen,disponible,id_categoria,favorito,estrella) VALUES (?,?,?,?,?,?,?,?,?)");
             if ($stmt) {
@@ -130,7 +130,6 @@ if (isset($_POST['editar'])) {
 // ─── ELIMINAR ──────────────────────────────────────────────────────────────
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
-    // Obtener imagen antes de eliminar
     $stmtImg = mysqli_prepare($conexion,"SELECT imagen FROM productos WHERE id_producto=?");
     mysqli_stmt_bind_param($stmtImg,"i",$id);
     mysqli_stmt_execute($stmtImg);
@@ -280,7 +279,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                     <label><?php echo $editar ? 'Cambiar imagen del producto' : 'Imagen del producto'; ?></label>
 
                     <?php if ($editar): ?>
-                        <!-- Imagen actual en modo edición -->
+                        
                         <?php if (!empty($editar['imagen'])): ?>
                         <div class="current-img-box" id="currentImgBox">
                             <img src="../<?php echo htmlspecialchars($editar['imagen']); ?>"
@@ -297,7 +296,6 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                         </p>
                     <?php endif; ?>
 
-                    <!-- Zona de subida -->
                     <div class="upload-zone" id="uploadZone">
                         <input type="file" name="imagen_archivo" id="imagenArchivo" accept="image/*">
                         <div class="uz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
@@ -307,7 +305,6 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                         </div>
                     </div>
 
-                    <!-- Vista previa del nuevo archivo -->
                     <div class="img-preview-wrap" id="imgPreviewWrap">
                         <img id="imgPreview" src="" alt="Vista previa">
                         <button type="button" class="btn-remove-img" id="btnRemoveImg" title="Quitar imagen seleccionada">
@@ -316,7 +313,6 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                     </div>
                 </div>
             </div>
-            <!-- ─────────────────────────────────────────────────────────── -->
 
             <!-- Categoría -->
             <div class="col-md-6">

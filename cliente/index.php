@@ -1448,7 +1448,7 @@ if (is_dir($heroDir)) {
             </div>
             <div>
                 <h5>Contacto</h5>
-                <a href="tel:+51999999999"><i class="fas fa-phone-alt me-1"></i> +51 999 999 999</a>
+                <a href="tel:+51999999999"><i class="fas fa-phone-alt me-1"></i> +51 917 328 085</a>
                 <a href="mailto:info@brisamar.com"><i class="fas fa-envelope me-1"></i> info@brisamar.com</a>
                 <a href="#"><i class="fas fa-map-marker-alt me-1"></i> Calle Principal 123</a>
             </div>
@@ -1491,7 +1491,7 @@ if (is_dir($heroDir)) {
                 slides[activeIndex].classList.remove('active');
                 activeIndex = (activeIndex + 1) % slides.length;
                 slides[activeIndex].classList.add('active');
-            }, 5000);
+            }, 2000);
         })();
 
         (function() {
@@ -1613,16 +1613,6 @@ if (is_dir($heroDir)) {
                 updateDots();
                 isTransitioning = false;
             });
-
-            // ─────────────────────────────────────────
-            //  VELOCIDAD DEL CARRUSEL  ← cambia este número (en milisegundos)
-            //  Ejemplos: 1000 = muy rápido | 4500 = normal | 7000 = lento
-            const VELOCIDAD_MS = 3000;
-            // ─────────────────────────────────────────
-            const restartAutoScroll = () => {
-                if (autoScrollTimer) clearInterval(autoScrollTimer);
-                autoScrollTimer = setInterval(next, VELOCIDAD_MS);
-            };
 
             // ── Errores de imagen: ocultamos la card ──
             window.handlePromoImageError = (img) => {

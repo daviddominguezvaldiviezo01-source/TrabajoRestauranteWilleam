@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ============================================================
  * ARCHIVO: config/config.php
@@ -30,7 +31,7 @@ define('SITE_KEYWORDS', 'restaurante, comida, seafood, mariscos, delivery, cevic
 // ──────────────────────────────────────────────────────────
 
 /** @const string CONTACT_PHONE - Número de teléfono */
-define('CONTACT_PHONE', '+51 999 999 999');
+define('CONTACT_PHONE', '+51 917 328 085');
 
 /** @const string CONTACT_EMAIL - Email de contacto */
 define('CONTACT_EMAIL', 'info@brisamar.com');
@@ -50,32 +51,39 @@ define('EMAILJS_SERVICE_ID', 'tu_emailjs_service_id');
 define('EMAILJS_TEMPLATE_ID', 'tu_emailjs_template_id');
 
 /** @const string NOTIFICATION_RECIPIENT_EMAIL - Email destinatario de las notificaciones */
-define('NOTIFICATION_RECIPIENT_EMAIL', CONTACT_EMAIL);
+define('NOTIFICATION_RECIPIENT_EMAIL', 'RestaurantesBrisamar@gmail.com');
 
 // ──────────────────────────────────────────────────────────
 // CONFIGURACIÓN MAIL SERVER (server-side fallback)
 // Si quieres envío server-side con SMTP, configura estos valores
 // ──────────────────────────────────────────────────────────
-/** @const bool MAIL_ENABLED - Habilita envío server-side con mail() */
-define('MAIL_ENABLED', false);
+/** @const bool MAIL_ENABLED - Habilita envío server-side con PHPMailer + Gmail SMTP */
+define('MAIL_ENABLED', true);
 
-/** @const string MAIL_FROM - Dirección FROM usada en emails */
-define('MAIL_FROM', CONTACT_EMAIL);
+/** @const string MAIL_FROM - Dirección FROM usada en emails (cuenta Gmail del restaurante) */
+define('MAIL_FROM', 'RestaurantesBrisamar@gmail.com');
 
 /** @const string MAIL_FROM_NAME - Nombre remitente */
-define('MAIL_FROM_NAME', SITE_NAME);
+define('MAIL_FROM_NAME', 'Restaurante Brisamar');
 
-/** @const string SMTP_HOST - Host SMTP si usas SMTP (opcional) */
-define('SMTP_HOST', 'smtp.example.com');
+/** @const string SMTP_HOST - Host SMTP de Gmail */
+define('SMTP_HOST', 'smtp.gmail.com');
 
-/** @const string SMTP_USER - Usuario SMTP (opcional) */
-define('SMTP_USER', 'user@example.com');
+/** @const string SMTP_USER - Cuenta Gmail del restaurante */
+define('SMTP_USER', 'RestaurantesBrisamar@gmail.com');
 
-/** @const string SMTP_PASS - Password SMTP (opcional) */
-define('SMTP_PASS', 'secret');
+/**
+ * @const string SMTP_PASS - Contraseña de Aplicación de Gmail (16 dígitos sin espacios)
+ * Para generarla: myaccount.google.com > Seguridad > Verificación en 2 pasos > Contraseñas de aplicación
+ * IMPORTANTE: No uses tu contraseña normal de Gmail, usa la contraseña de aplicación.
+ */
+define('SMTP_PASS', 'iyifzlhhfbvboull');
 
-/** @const int SMTP_PORT - Puerto SMTP (opcional) */
+/** @const int SMTP_PORT - Puerto SMTP de Gmail (587 = TLS) */
 define('SMTP_PORT', 587);
+
+/** @const string NOTIFICATION_RECIPIENT_EMAIL_ADMIN - Email del restaurante para copias de pedidos */
+define('NOTIFICATION_RECIPIENT_EMAIL_ADMIN', 'RestaurantesBrisamar@gmail.com');
 
 
 /** @const string CONTACT_ADDRESS - Dirección física */
@@ -176,4 +184,3 @@ define('MESSAGES', [
     'error_empty_fields' => '❌ Por favor completa todos los campos',
     'error_passwords_mismatch' => '❌ Las contraseñas no coinciden'
 ]);
-?>

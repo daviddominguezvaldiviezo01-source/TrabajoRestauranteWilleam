@@ -276,6 +276,16 @@ $active_page = 'pedidos';
             </div>
             <button type="submit" name="cambiar_estado" class="btn-red"><i class="fas fa-save"></i> Actualizar</button>
         </form>
+        <!-- Botón descargar voucher -->
+        <div style="margin-top:14px;">
+            <a href="generar_voucher_admin.php?id_pedido=<?php echo $detalle_pedido['id_pedido']; ?>"
+               download
+               style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;transition:.2s;box-shadow:0 4px 12px rgba(25,118,210,.35);"
+               onmouseover="this.style.background='linear-gradient(135deg,#0d47a1,#1565c0)';this.style.transform='translateY(-2px)';"
+               onmouseout="this.style.background='linear-gradient(135deg,#1565c0,#1976d2)';this.style.transform='';">
+                <i class="fas fa-file-pdf"></i> Descargar Voucher PDF
+            </a>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -296,7 +306,19 @@ $active_page = 'pedidos';
                     <td style="color:rgba(255,255,255,.5);font-size:13px;"><?php echo ucfirst($p['metodo'] ?? '-'); ?></td>
                     <td><span class="badge-estado badge-<?php echo str_replace(' ','_',$p['estado']); ?>"><?php echo ucfirst($p['estado']); ?></span></td>
                     <td style="color:rgba(255,255,255,.4);font-size:13px;"><?php echo date('d/m/Y H:i',strtotime($p['fecha'])); ?></td>
-                    <td><a href="pedidos.php?id=<?php echo $p['id_pedido']; ?>" class="btn-edit-dark"><i class="fas fa-eye"></i> Ver</a></td>
+                    <td>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <a href="pedidos.php?id=<?php echo $p['id_pedido']; ?>" class="btn-edit-dark"><i class="fas fa-eye"></i> Ver</a>
+                            <a href="generar_voucher_admin.php?id_pedido=<?php echo $p['id_pedido']; ?>"
+                               download
+                               title="Descargar Voucher"
+                               style="display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;transition:.2s;"
+                               onmouseover="this.style.background='#0d47a1';"
+                               onmouseout="this.style.background='linear-gradient(135deg,#1565c0,#1976d2)';">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        </div>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>

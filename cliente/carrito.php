@@ -229,7 +229,17 @@ body { background:#111; font-family:'Segoe UI',sans-serif; color:#fff; min-heigh
             <div class="order-card">
                 <div class="order-line">
                     <span><strong>Pedido #<?php echo intval($pedido['id_pedido']); ?></strong></span>
-                    <span class="status-badge <?php echo htmlspecialchars($clase_estado); ?>"><?php echo htmlspecialchars(ucfirst($pedido['estado'])); ?></span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="status-badge <?php echo htmlspecialchars($clase_estado); ?>"><?php echo htmlspecialchars(ucfirst($pedido['estado'])); ?></span>
+                        <a href="generar_voucher.php?id_pedido=<?php echo intval($pedido['id_pedido']); ?>"
+                           title="Descargar Voucher PDF"
+                           style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none;transition:.2s;"
+                           onmouseover="this.style.background='linear-gradient(135deg,#0d47a1,#1565c0)';this.style.transform='translateY(-1px)';"
+                           onmouseout="this.style.background='linear-gradient(135deg,#1565c0,#1976d2)';this.style.transform='';"
+                           download>
+                            <i class="fas fa-file-pdf"></i> Voucher
+                        </a>
+                    </div>
                 </div>
                 <div class="order-details">
                     <span><strong>Total:</strong> S/ <?php echo number_format($pedido['total'],2); ?></span>
