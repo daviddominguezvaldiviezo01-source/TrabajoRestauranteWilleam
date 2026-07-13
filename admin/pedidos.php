@@ -187,6 +187,7 @@ $active_page = 'pedidos';
 <title>Pedidos - Brisamar Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="../assets/css/admin_pedidos.css">
 </head>
 <body>
 <?php include('_admin_layout.php'); ?>
@@ -212,59 +213,59 @@ $active_page = 'pedidos';
 
     <!-- DETALLE -->
     <?php if($detalle_pedido): ?>
-    <div class="card-dark" style="border-left:3px solid #c8102e;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h4 style="margin:0;"><i class="fas fa-receipt"></i> Pedido #<?php echo $detalle_pedido['id_pedido']; ?></h4>
-            <a href="pedidos.php" style="color:rgba(255,255,255,.4);text-decoration:none;font-size:18px;">✕</a>
+    <div class="card-dark pedidos-detail-card">
+        <div class="pedidos-header">
+            <h4 class="pedidos-title"><i class="fas fa-receipt"></i> Pedido #<?php echo $detalle_pedido['id_pedido']; ?></h4>
+            <a href="pedidos.php" class="pedidos-close">✕</a>
         </div>
-        <div class="row g-3" style="margin-bottom:16px;">
+        <div class="row g-3 mb-16">
             <div class="col-md-4">
-                <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">CLIENTE</div>
-                <div style="font-weight:700;"><?php echo htmlspecialchars($detalle_pedido['cliente'] ?? 'Invitado'); ?></div>
-                <div style="font-size:13px;color:rgba(255,255,255,.4);"><?php echo htmlspecialchars($detalle_pedido['email'] ?? '-'); ?></div>
-                <div style="font-size:13px;color:rgba(255,255,255,.4);"><?php echo htmlspecialchars($detalle_pedido['telefono'] ?? '-'); ?></div>
+                <div class="detail-label">CLIENTE</div>
+                <div class="detail-val-700"><?php echo htmlspecialchars($detalle_pedido['cliente'] ?? 'Invitado'); ?></div>
+                <div class="detail-sub"><?php echo htmlspecialchars($detalle_pedido['email'] ?? '-'); ?></div>
+                <div class="detail-sub"><?php echo htmlspecialchars($detalle_pedido['telefono'] ?? '-'); ?></div>
             </div>
             <div class="col-md-4">
-                <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">DIRECCIÓN</div>
-                <div style="font-weight:600;"><?php echo htmlspecialchars($detalle_pedido['direccion'] ?? 'No especificada'); ?></div>
-                <div style="font-size:13px;color:rgba(255,255,255,.4);"><?php echo htmlspecialchars($detalle_pedido['referencia'] ?? ''); ?></div>
+                <div class="detail-label">DIRECCIÓN</div>
+                <div class="detail-val-600"><?php echo htmlspecialchars($detalle_pedido['direccion'] ?? 'No especificada'); ?></div>
+                <div class="detail-sub"><?php echo htmlspecialchars($detalle_pedido['referencia'] ?? ''); ?></div>
             </div>
             <div class="col-md-4">
-                <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:4px;">PAGO</div>
-                <div style="font-weight:600;"><?php echo ucfirst($detalle_pedido['metodo'] ?? '-'); ?></div>
-                <div style="font-size:13px;color:rgba(255,255,255,.4);"><?php echo date('d/m/Y H:i',strtotime($detalle_pedido['fecha'])); ?></div>
+                <div class="detail-label">PAGO</div>
+                <div class="detail-val-600"><?php echo ucfirst($detalle_pedido['metodo'] ?? '-'); ?></div>
+                <div class="detail-sub"><?php echo date('d/m/Y H:i',strtotime($detalle_pedido['fecha'])); ?></div>
             </div>
         </div>
-        <table class="dark-table" style="margin-bottom:16px;">
+        <table class="dark-table mb-16">
             <thead><tr><th>Imagen</th><th>Producto</th><th>Cantidad</th><th>Subtotal</th></tr></thead>
             <tbody>
                 <?php foreach($detalle_items as $item): ?>
                 <tr>
-                    <td><img src="<?php echo htmlspecialchars($item['imagen']); ?>" style="width:46px;height:46px;object-fit:cover;border-radius:8px;background:#2a2a2a;" onerror="this.style.display='none'"></td>
+                    <td><img src="<?php echo htmlspecialchars($item['imagen']); ?>" class="item-img" onerror="this.style.display='none'"></td>
                     <td><?php echo htmlspecialchars($item['nombre']); ?></td>
                     <td><?php echo $item['cantidad']; ?></td>
-                    <td style="font-weight:700;">S/ <?php echo number_format($item['subtotal'],2); ?></td>
+                    <td class="detail-val-700">S/ <?php echo number_format($item['subtotal'],2); ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <div style="text-align:right;font-size:1.2rem;font-weight:900;margin-bottom:16px;">
+        <div class="total-right">
             Total: S/ <?php echo number_format($detalle_pedido['total'],2); ?>
         </div>
-        <hr style="border-color:#2a2a2a;margin-bottom:16px;">
-        <form method="POST" class="form-dark" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <hr class="hr-dark">
+        <form method="POST" class="form-dark form-flex-end">
             <input type="hidden" name="id_pedido" value="<?php echo $detalle_pedido['id_pedido']; ?>">
-            <div class="form-group-dark" style="margin:0;min-width:220px;">
+            <div class="form-group-dark m-0 min-w-220">
                 <label>Cambiar estado</label>
-                <select name="estado" style="width:100%;">
+                <select name="estado" class="w-100">
                     <?php foreach(['pendiente','preparando','ir a recoger','en camino','entregado','cancelado'] as $e): ?>
                     <option value="<?php echo $e; ?>" <?php if($detalle_pedido['estado']==$e) echo 'selected'; ?>><?php echo ucfirst($e); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group-dark" style="margin:0;min-width:240px;">
+            <div class="form-group-dark m-0 min-w-240">
                 <label>Asignar repartidor</label>
-                <select name="id_repartidor" style="width:100%;">
+                <select name="id_repartidor" class="w-100">
                     <option value="">Sin asignar</option>
                     <?php 
                     $repartidores_detalle = mysqli_query($conexion, "SELECT id_usuario, nombre, email FROM usuarios WHERE rol='delivery' ORDER BY nombre");
@@ -276,6 +277,15 @@ $active_page = 'pedidos';
             </div>
             <button type="submit" name="cambiar_estado" class="btn-red"><i class="fas fa-save"></i> Actualizar</button>
         </form>
+        <!-- Botones: descargar y reenviar voucher -->
+        <div class="mt-14 d-flex gap-12 flex-wrap">
+            <a href="generar_voucher_admin.php?id_pedido=<?php echo $detalle_pedido['id_pedido']; ?>" download class="btn-pdf">
+                <i class="fas fa-file-pdf"></i> Descargar Voucher PDF
+            </a>
+            <a href="reenviar_voucher.php?id_pedido=<?php echo $detalle_pedido['id_pedido']; ?>" class="btn-email">
+                <i class="fas fa-envelope"></i> Reenviar Voucher por Email
+            </a>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -292,11 +302,21 @@ $active_page = 'pedidos';
                     <td><strong>#<?php echo $p['id_pedido']; ?></strong></td>
                     <td><?php echo htmlspecialchars($p['cliente'] ?? 'Invitado'); ?></td>
                     <td><?php echo htmlspecialchars($p['repartidor'] ?? '-'); ?></td>
-                    <td style="font-weight:700;">S/ <?php echo number_format($p['total'],2); ?></td>
-                    <td style="color:rgba(255,255,255,.5);font-size:13px;"><?php echo ucfirst($p['metodo'] ?? '-'); ?></td>
+                    <td class="detail-val-700">S/ <?php echo number_format($p['total'],2); ?></td>
+                    <td class="detail-sub"><?php echo ucfirst($p['metodo'] ?? '-'); ?></td>
                     <td><span class="badge-estado badge-<?php echo str_replace(' ','_',$p['estado']); ?>"><?php echo ucfirst($p['estado']); ?></span></td>
-                    <td style="color:rgba(255,255,255,.4);font-size:13px;"><?php echo date('d/m/Y H:i',strtotime($p['fecha'])); ?></td>
-                    <td><a href="pedidos.php?id=<?php echo $p['id_pedido']; ?>" class="btn-edit-dark"><i class="fas fa-eye"></i> Ver</a></td>
+                    <td class="detail-sub"><?php echo date('d/m/Y H:i',strtotime($p['fecha'])); ?></td>
+                    <td>
+                        <div class="action-btns">
+                            <a href="pedidos.php?id=<?php echo $p['id_pedido']; ?>" class="btn-edit-dark"><i class="fas fa-eye"></i> Ver</a>
+                            <a href="generar_voucher_admin.php?id_pedido=<?php echo $p['id_pedido']; ?>" download title="Descargar Voucher" class="btn-pdf-sm">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                            <a href="reenviar_voucher.php?id_pedido=<?php echo $p['id_pedido']; ?>" title="Reenviar Voucher por Email" class="btn-email-sm">
+                                <i class="fas fa-envelope"></i>
+                            </a>
+                        </div>
+                    </td>
                 </tr>
                 <?php endwhile; ?>
             </tbody>
@@ -304,60 +324,60 @@ $active_page = 'pedidos';
         
         <!-- PAGINACIÓN -->
         <?php if($total_paginas > 1): ?>
-        <div class="pagination-wrapper" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+        <div class="pagination-wrapper">
             <!-- Anterior -->
             <?php if($pagina_actual > 1): ?>
-                <a href="pedidos.php?pag=<?php echo $pagina_actual-1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn" style="padding:8px 12px;border:1px solid #444;border-radius:6px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;">
+                <a href="pedidos.php?pag=<?php echo $pagina_actual-1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn">
                     <i class="fas fa-chevron-left"></i> Anterior
                 </a>
             <?php else: ?>
-                <span style="padding:8px 12px;border:1px solid #333;border-radius:6px;color:#666;background:#0a0a0a;cursor:not-allowed;">
+                <span class="pagination-disabled">
                     <i class="fas fa-chevron-left"></i> Anterior
                 </span>
             <?php endif; ?>
             
             <!-- Números de página -->
-            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
+            <div class="page-numbers-wrapper">
                 <?php 
                 $inicio = max(1, $pagina_actual - 2);
                 $fin = min($total_paginas, $pagina_actual + 2);
                 
                 if($inicio > 1): ?>
-                    <a href="pedidos.php?pag=1<?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;">1</a>
+                    <a href="pedidos.php?pag=1<?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="page-number">1</a>
                     <?php if($inicio > 2): ?>
-                        <span style="padding:6px 8px;color:#666;">...</span>
+                        <span class="page-dots">...</span>
                     <?php endif; ?>
                 <?php endif; ?>
                 
                 <?php for($p = $inicio; $p <= $fin; $p++): ?>
                     <?php if($p == $pagina_actual): ?>
-                        <span style="padding:6px 10px;border:1px solid #c8102e;border-radius:4px;background:#c8102e;color:#fff;font-weight:700;"><?php echo $p; ?></span>
+                        <span class="page-number active"><?php echo $p; ?></span>
                     <?php else: ?>
-                        <a href="pedidos.php?pag=<?php echo $p; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;" onmouseover="this.style.borderColor='#c8102e';this.style.color='#c8102e';" onmouseout="this.style.borderColor='#444';this.style.color='#fff';"><?php echo $p; ?></a>
+                        <a href="pedidos.php?pag=<?php echo $p; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="page-number"><?php echo $p; ?></a>
                     <?php endif; ?>
                 <?php endfor; ?>
                 
                 <?php if($fin < $total_paginas): ?>
                     <?php if($fin < $total_paginas - 1): ?>
-                        <span style="padding:6px 8px;color:#666;">...</span>
+                        <span class="page-dots">...</span>
                     <?php endif; ?>
-                    <a href="pedidos.php?pag=<?php echo $total_paginas; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" style="padding:6px 10px;border:1px solid #444;border-radius:4px;color:#fff;text-decoration:none;background:#1a1a1a;"><?php echo $total_paginas; ?></a>
+                    <a href="pedidos.php?pag=<?php echo $total_paginas; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="page-number"><?php echo $total_paginas; ?></a>
                 <?php endif; ?>
             </div>
             
             <!-- Siguiente -->
             <?php if($pagina_actual < $total_paginas): ?>
-                <a href="pedidos.php?pag=<?php echo $pagina_actual+1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn" style="padding:8px 12px;border:1px solid #444;border-radius:6px;color:#fff;text-decoration:none;background:#1a1a1a;transition:all .2s;">
+                <a href="pedidos.php?pag=<?php echo $pagina_actual+1; ?><?php if($filtro_estado) echo '&estado='.urlencode($filtro_estado); ?>" class="pagination-btn">
                     Siguiente <i class="fas fa-chevron-right"></i>
                 </a>
             <?php else: ?>
-                <span style="padding:8px 12px;border:1px solid #333;border-radius:6px;color:#666;background:#0a0a0a;cursor:not-allowed;">
+                <span class="pagination-disabled">
                     Siguiente <i class="fas fa-chevron-right"></i>
                 </span>
             <?php endif; ?>
             
             <!-- Info -->
-            <div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;margin-left:auto;margin-right:auto;width:100%;">
+            <div class="page-info-text">
                 Página <?php echo $pagina_actual; ?> de <?php echo $total_paginas; ?> (<?php echo $total_pedidos; ?> pedidos)
             </div>
         </div>
@@ -365,29 +385,7 @@ $active_page = 'pedidos';
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const adminPedidosRefreshInterval = 15000; // 15 segundos
-    let adminPedidosRefreshTimer = null;
 
-    function scheduleAdminPedidosRefresh() {
-        if (document.hidden) {
-            return;
-        }
-        adminPedidosRefreshTimer = window.setTimeout(() => {
-            window.location.reload();
-        }, adminPedidosRefreshInterval);
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            if (adminPedidosRefreshTimer) {
-                clearTimeout(adminPedidosRefreshTimer);
-            }
-            scheduleAdminPedidosRefresh();
-        }
-    });
-
-    scheduleAdminPedidosRefresh();
-</script>
+<script src="../assets/js/admin_pedidos.js"></script>
 </body>
 </html>

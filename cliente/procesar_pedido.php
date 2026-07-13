@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
+/** @var mysqli $conexion */
 require_once dirname(__FILE__) . '/../config/config.php';
 
 $id_usuario = isset($_SESSION['usuario']) ? intval($_SESSION['usuario']) : null;
@@ -49,7 +50,7 @@ if (!in_array($metodo_pago, $metodos_validos)) {
 // ==========================================
 // MANEJAR DIRECCIÓN (CORREGIDO)
 // ==========================================
-if (!empty($nueva_direccion)) {
+if (empty($id_direccion) && !empty($nueva_direccion)) {
     if ($id_usuario) {
         $stmtDir = mysqli_prepare($conexion, "INSERT INTO direcciones (id_usuario, direccion, referencia) VALUES (?,?,?)");
         mysqli_stmt_bind_param($stmtDir, "iss", $id_usuario, $nueva_direccion, $referencia);
@@ -174,114 +175,73 @@ mysqli_stmt_execute($stmtPago);
 unset($_SESSION['carrito']);
 unset($_SESSION['invitado']);
 
-if (!isset($_SESSION['mensaje']) && !isset($_SESSION['error'])) {
-    $_SESSION['mensaje'] = "¡Pedido #$id_pedido realizado con éxito! 🎉";
-}
-
-// Intento de envío server-side (fallback) si está habilitado en config
-$server_send_result = null;
-if (defined('MAIL_ENABLED') && MAIL_ENABLED) {
-    require_once __DIR__ . '/../tools/send_server_email.php';
-    $subject = "Nuevo pedido #$id_pedido - " . SITE_NAME;
-    $items_text = '';
-    foreach ($items_carrito as $it) {
-        $items_text .= $it['nombre'] . ' x ' . $it['cantidad'] . "\n";
+// ── Envío de voucher por correo (PHPMailer + Gmail SMTP) ──
+$email_resultado = ['ok' => false, 'error' => 'Correo no habilitado'];
+if (defined('MAIL_ENABLED') && MAIL_ENABLED && !empty($correo)) {
+    if (!defined('FPDFONTPATH')) {
+        define('FPDFONTPATH', __DIR__ . '/../vendor/fpdf/font/');
     }
-    $body = "Nuevo pedido (#$id_pedido)\nCliente: $nombre\nEmail: $correo\nTotal: S/ " . number_format($total_con_impuesto,2) . "\nItems:\n" . $items_text;
-    $res_send = send_server_email(NOTIFICATION_RECIPIENT_EMAIL, $subject, nl2br(htmlspecialchars($body)), $body);
-    $server_send_result = $res_send;
+    require_once __DIR__ . '/../tools/mailer.php';
+    $datos_pedido_mail = [
+        'id_pedido'         => $id_pedido,
+        'nombre'            => $nombre,
+        'correo'            => $correo,
+        'telefono'          => $telefono,
+        'direccion'         => !empty($nueva_direccion) ? $nueva_direccion . ($referencia ? ' (' . $referencia . ')' : '') : 'Sin dirección',
+        'estado'            => $estado_pedido,
+        'metodo_pago'       => $metodo_pago,
+        'metodo_pago_label' => ucfirst($metodo_pago),
+        'total'             => $total_con_impuesto,
+        'total_fmt'         => number_format($total_con_impuesto, 2),
+        'fecha'             => date('Y-m-d H:i:s'),
+    ];
+    $email_resultado = enviar_voucher_email($datos_pedido_mail, $items_carrito, $correo, $nombre);
 }
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="5;url=index.php">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pedido confirmado - Mi Restaurante</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    background:#111;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    font-family:'Segoe UI',sans-serif;
-    color:#fff;
-    padding:20px;
-}
-.boucher {
-    background:#1a1a1a;
-    border:1px solid #2a2a2a;
-    border-radius:20px;
-    padding:40px 32px;
-    max-width:460px;
-    width:100%;
-    text-align:center;
-    box-shadow:0 20px 60px rgba(0,0,0,.5);
-}
-.check-circle {
-    width:80px;height:80px;
-    background:rgba(76,175,80,.15);
-    border:2px solid rgba(76,175,80,.4);
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    margin:0 auto 20px;
-    animation:pulse 1.5s infinite;
-}
-.check-circle i { font-size:36px; color:#81c784; }
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
-.boucher h1 { font-size:1.6rem; font-weight:900; color:#fff; margin-bottom:6px; }
-.boucher .sub { color:rgba(255,255,255,.4); font-size:14px; margin-bottom:24px; }
-.pedido-num {
-    background:#111;border:1px solid #2a2a2a;border-radius:12px;
-    padding:14px;font-size:1.4rem;font-weight:900;color:#fff;
-    margin-bottom:20px;letter-spacing:1px;
-}
-.info-box {
-    background:#111;border:1px solid #2a2a2a;border-radius:12px;
-    padding:16px;margin-bottom:20px;text-align:left;
-}
-.info-row {
-    display:flex;justify-content:space-between;align-items:center;
-    padding:9px 0;border-bottom:1px solid #1e1e1e;font-size:14px;
-}
-.info-row:last-child{border-bottom:none;}
-.info-row .lbl{color:rgba(255,255,255,.4);font-weight:600;}
-.info-row .val{color:#fff;font-weight:700;}
-.btn-home {
-    background:#c8102e;color:#fff;border:none;border-radius:30px;
-    padding:12px 28px;font-weight:700;font-size:14px;
-    text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    transition:.2s;
-}
-.btn-home:hover{background:#a50d26;color:#fff;transform:translateY(-2px);}
-.btn-sec {
-    background:transparent;color:rgba(255,255,255,.5);
-    border:1.5px solid #2a2a2a;border-radius:30px;
-    padding:11px 22px;font-weight:600;font-size:14px;
-    text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    transition:.2s;
-}
-.btn-sec:hover{border-color:rgba(255,255,255,.3);color:#fff;}
-.countdown{font-size:12px;color:rgba(255,255,255,.25);margin-top:18px;}
-</style>
+<link rel="stylesheet" href="../assets/css/procesar_pedido.css">
 </head>
 <body>
 <div class="boucher">
     <div class="check-circle"><i class="fas fa-check"></i></div>
     <h1>¡Pedido Confirmado!</h1>
     <p class="sub">Tu pedido ha sido registrado exitosamente</p>
-    <div class="pedido-num"># <?php echo $id_pedido; ?></div>
+    <div class="pedido-num"># <?php echo str_pad($id_pedido, 6, '0', STR_PAD_LEFT); ?></div>
+
+    <!-- Estado del envio de correo -->
+    <?php if ($email_resultado['ok']): ?>
+    <div class="email-badge ok">
+        <i class="fas fa-envelope-circle-check"></i>
+        <span>Voucher enviado a <strong><?php echo htmlspecialchars($correo); ?></strong></span>
+    </div>
+    <?php elseif (!empty($correo)): ?>
+    <div class="email-badge err">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>No se pudo enviar el correo.
+            <?php if (!empty($email_resultado['error'])): ?>
+                Error: <?php echo htmlspecialchars($email_resultado['error']); ?>.
+            <?php endif; ?>
+            Descarga tu voucher más abajo.
+        </span>
+    </div>
+    <?php endif; ?>
+
     <div class="info-box">
         <div class="info-row">
-            <span class="lbl"><i class="fas fa-money-bill"></i> Total</span>
-            <span class="val">S/ <?php echo number_format($total_con_impuesto,2); ?></span>
+            <span class="lbl"><i class="fas fa-user"></i> Cliente</span>
+            <span class="val"><?php echo htmlspecialchars($nombre); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="lbl"><i class="fas fa-map-marker-alt"></i> Dirección</span>
+            <span class="val"><?php echo htmlspecialchars($nueva_direccion.($referencia?' ('.$referencia.')':'')); ?></span>
         </div>
         <div class="info-row">
             <span class="lbl"><i class="fas fa-credit-card"></i> Método de pago</span>
@@ -289,54 +249,49 @@ body {
         </div>
         <div class="info-row">
             <span class="lbl"><i class="fas fa-clock"></i> Estado</span>
-            <span class="val" style="color:#ffc107;">Pendiente</span>
+            <span class="val text-warning-custom">Pendiente</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row">
+            <span class="lbl">Subtotal</span>
+            <span class="val">S/ <?php echo number_format($total, 2); ?></span>
         </div>
         <div class="info-row">
-            <span class="lbl"><i class="fas fa-user"></i> Cliente</span>
-            <span class="val"><?php echo htmlspecialchars($nombre); ?></span>
+            <span class="lbl">IGV (18%)</span>
+            <span class="val">S/ <?php echo number_format($impuesto, 2); ?></span>
         </div>
         <div class="info-row">
-            <span class="lbl"><i class="fas fa-map-marker-alt"></i> Dirección</span>
-            <span class="val" style="font-size:13px;max-width:200px;text-align:right;"><?php echo htmlspecialchars($nueva_direccion.($referencia?' ('.$referencia.')':'')); ?></span>
+            <span class="lbl">Delivery</span>
+            <span class="val">S/ <?php echo number_format($delivery, 2); ?></span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row total-row">
+            <span class="lbl">Total a Pagar</span>
+            <span class="val">S/ <?php echo number_format($total_con_impuesto,2); ?></span>
         </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <a href="index.php" class="btn-home"><i class="fas fa-home"></i> Volver al Menú</a>
+
+    <!-- Botones de accion -->
+    <div class="btn-group">
+        <a href="generar_voucher.php?id_pedido=<?php echo $id_pedido; ?>" class="btn-download" download>
+            <i class="fas fa-file-pdf"></i> Descargar Voucher
+        </a>
+        <a href="index.php" class="btn-home"><i class="fas fa-home"></i> Inicio</a>
         <?php if($id_usuario): ?>
         <a href="carrito.php" class="btn-sec"><i class="fas fa-list"></i> Mis Pedidos</a>
         <?php endif; ?>
     </div>
-    <div class="countdown"><i class="fas fa-spinner fa-spin"></i> Redirigiendo en <span id="t">5</span>s...</div>
+    <div class="countdown"><i class="fas fa-spinner fa-spin"></i> Redirigiendo en <span id="t">30</span>s...</div>
 </div>
 
-<script>
-let t=5;
-const el=document.getElementById('t');
-setInterval(()=>{ t--; if(el) el.textContent=t; },1000);
-</script>
 
+
+<script src="../assets/js/procesar_pedido.js"></script>
 </body>
 </html>
 
-<!-- EmailJS: enviar notificación al propietario/administrador -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-    (function(){
-        try{
-            emailjs.init('<?php echo EMAILJS_USER_ID; ?>');
-        }catch(e){ console.warn('EmailJS init error', e); }
-
-        var templateParams = {
-            to_email: '<?php echo NOTIFICATION_RECIPIENT_EMAIL; ?>',
-            order_id: '<?php echo $id_pedido; ?>',
-            total: '<?php echo number_format($total_con_impuesto,2); ?>',
-            customer: '<?php echo htmlspecialchars($nombre, ENT_QUOTES); ?>',
-            items: <?php echo json_encode($items_carrito, JSON_HEX_APOS|JSON_HEX_QUOT); ?>
-        };
-
-        // Intentar enviar el email. Ajusta SERVICE_ID y TEMPLATE_ID en config/config.php
-        emailjs.send('<?php echo EMAILJS_SERVICE_ID; ?>','<?php echo EMAILJS_TEMPLATE_ID; ?>', templateParams)
-            .then(function(){ console.log('Notificación enviada por EmailJS'); })
-            .catch(function(err){ console.error('Error EmailJS:', err); });
-    })();
-</script>
+<!-- Email enviado server-side via PHPMailer + Gmail SMTP -->

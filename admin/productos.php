@@ -6,8 +6,8 @@ if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:
 
 $msg = ''; $msg_tipo = 'success';
 
-/* ─── Función auxiliar: mueve la imagen subida y devuelve la ruta relativa ─── */
-function procesarImagenProducto($fileKey, &$error) {
+
+function procesarImagenProducto(string $fileKey, string &$error): ?string {
     if (empty($_FILES[$fileKey]['name']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
         return null; // No se subió ningún archivo
     }
@@ -54,7 +54,7 @@ if (isset($_POST['crear'])) {
             $msg = $errImg;
             $msg_tipo = 'error';
         } else {
-            $imagen = $imagen ?? ''; // si no subió imagen queda vacío
+            $imagen = $imagen ?? '';
             $stmt = mysqli_prepare($conexion,
                 "INSERT INTO productos (nombre,descripcion,precio,stock,imagen,disponible,id_categoria,favorito,estrella) VALUES (?,?,?,?,?,?,?,?,?)");
             if ($stmt) {
@@ -130,7 +130,6 @@ if (isset($_POST['editar'])) {
 // ─── ELIMINAR ──────────────────────────────────────────────────────────────
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
-    // Obtener imagen antes de eliminar
     $stmtImg = mysqli_prepare($conexion,"SELECT imagen FROM productos WHERE id_producto=?");
     mysqli_stmt_bind_param($stmtImg,"i",$id);
     mysqli_stmt_execute($stmtImg);
@@ -168,65 +167,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
 <title>Productos - Brisamar Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<style>
-/* ── Upload zone ── */
-.upload-zone {
-    border: 2px dashed rgba(255,255,255,.18);
-    border-radius: 12px;
-    padding: 22px 18px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .25s, background .25s;
-    background: rgba(255,255,255,.03);
-    position: relative;
-}
-.upload-zone:hover, .upload-zone.dragover {
-    border-color: #e53935;
-    background: rgba(229,57,53,.06);
-}
-.upload-zone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-}
-.upload-zone .uz-icon { font-size: 28px; color: rgba(255,255,255,.35); margin-bottom: 8px; }
-.upload-zone .uz-text { color: rgba(255,255,255,.5); font-size: 13px; }
-.upload-zone .uz-text strong { color: rgba(255,255,255,.8); }
-
-/* ── Image preview ── */
-.img-preview-wrap {
-    display: none;
-    position: relative;
-    width: 130px;
-    margin: 14px auto 0;
-}
-.img-preview-wrap img {
-    width: 130px; height: 130px; object-fit: cover;
-    border-radius: 10px; border: 2px solid rgba(255,255,255,.12);
-    display: block;
-}
-.img-preview-wrap .btn-remove-img {
-    position: absolute; top: -8px; right: -8px;
-    background: #e53935; border: none; border-radius: 50%;
-    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-    color: #fff; cursor: pointer; font-size: 12px; padding: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,.4);
-}
-.img-preview-wrap .btn-remove-img:hover { background: #b71c1c; }
-
-/* ── Current image (edit mode) ── */
-.current-img-box {
-    display: flex; align-items: center; gap: 14px;
-    background: rgba(255,255,255,.04); border-radius: 10px;
-    padding: 12px 14px; margin-bottom: 12px;
-    border: 1px solid rgba(255,255,255,.08);
-}
-.current-img-box img {
-    width: 68px; height: 68px; object-fit: cover; border-radius: 8px;
-    border: 1px solid rgba(255,255,255,.1);
-}
-.current-img-box .ci-info { flex: 1; }
-.current-img-box .ci-label { color: rgba(255,255,255,.45); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
-.current-img-box .ci-name  { color: rgba(255,255,255,.8); font-size: 13px; margin-top: 2px; word-break: break-all; }
-</style>
+<link rel="stylesheet" href="../assets/css/admin_productos.css">
 </head>
 <body>
 <?php include('_admin_layout.php'); ?>
@@ -238,7 +179,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
 </div>
 
 <?php if($msg): ?>
-<div class="alert-dark-success" style="<?php echo $msg_tipo==='error' ? 'background:rgba(244,67,54,.12);border-color:rgba(244,67,54,.3);color:#ef9a9a;' : ''; ?>">
+<div class="alert-dark-success <?php echo $msg_tipo==='error' ? 'alert-error-custom' : ''; ?>">
     <i class="fas <?php echo $msg_tipo==='error' ? 'fa-triangle-exclamation' : 'fa-check-circle'; ?>"></i> <?php echo $msg; ?>
 </div>
 <?php endif; ?>
@@ -280,7 +221,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                     <label><?php echo $editar ? 'Cambiar imagen del producto' : 'Imagen del producto'; ?></label>
 
                     <?php if ($editar): ?>
-                        <!-- Imagen actual en modo edición -->
+                        
                         <?php if (!empty($editar['imagen'])): ?>
                         <div class="current-img-box" id="currentImgBox">
                             <img src="../<?php echo htmlspecialchars($editar['imagen']); ?>"
@@ -292,12 +233,11 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                         </div>
                         <?php endif; ?>
                         <input type="hidden" name="imagen_actual" value="<?php echo htmlspecialchars($editar['imagen'] ?? ''); ?>">
-                        <p style="color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px;">
+                        <p class="info-text-sm">
                             <i class="fas fa-info-circle"></i> Selecciona un archivo nuevo para reemplazarla. Si no seleccionas nada, se conservará la imagen actual.
                         </p>
                     <?php endif; ?>
 
-                    <!-- Zona de subida -->
                     <div class="upload-zone" id="uploadZone">
                         <input type="file" name="imagen_archivo" id="imagenArchivo" accept="image/*">
                         <div class="uz-icon"><i class="fas fa-cloud-upload-alt"></i></div>
@@ -307,7 +247,6 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                         </div>
                     </div>
 
-                    <!-- Vista previa del nuevo archivo -->
                     <div class="img-preview-wrap" id="imgPreviewWrap">
                         <img id="imgPreview" src="" alt="Vista previa">
                         <button type="button" class="btn-remove-img" id="btnRemoveImg" title="Quitar imagen seleccionada">
@@ -316,7 +255,6 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                     </div>
                 </div>
             </div>
-            <!-- ─────────────────────────────────────────────────────────── -->
 
             <!-- Categoría -->
             <div class="col-md-6">
@@ -332,20 +270,20 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
             </div>
 
             <!-- Checkboxes -->
-            <div class="col-md-6" style="display:flex;gap:24px;align-items:center;padding-top:8px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:rgba(255,255,255,.7);font-size:14px;text-transform:none;letter-spacing:0;">
-                    <input type="checkbox" name="disponible" <?php echo (!$editar || $editar['disponible']) ? 'checked' : ''; ?> style="width:16px;height:16px;"> Disponible
+            <div class="col-md-6 checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="disponible" <?php echo (!$editar || $editar['disponible']) ? 'checked' : ''; ?> class="checkbox-input"> Disponible
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:rgba(255,255,255,.7);font-size:14px;text-transform:none;letter-spacing:0;">
-                    <input type="checkbox" name="favorito" <?php echo ($editar && $editar['favorito']) ? 'checked' : ''; ?> style="width:16px;height:16px;"> Favorito
+                <label class="checkbox-label">
+                    <input type="checkbox" name="favorito" <?php echo ($editar && $editar['favorito']) ? 'checked' : ''; ?> class="checkbox-input"> Favorito
                 </label>
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:rgba(255,255,255,.7);font-size:14px;text-transform:none;letter-spacing:0;">
-                    <input type="checkbox" name="estrella" <?php echo ($editar && $editar['estrella']) ? 'checked' : ''; ?> style="width:16px;height:16px;"> Estrella
+                <label class="checkbox-label">
+                    <input type="checkbox" name="estrella" <?php echo ($editar && $editar['estrella']) ? 'checked' : ''; ?> class="checkbox-input"> Estrella
                 </label>
             </div>
 
             <!-- Botones -->
-            <div class="col-12" style="display:flex;gap:10px;">
+            <div class="col-12 btn-group-flex">
                 <button type="submit" name="<?php echo $editar ? 'editar' : 'crear'; ?>" class="btn-red">
                     <i class="fas fa-<?php echo $editar ? 'save' : 'plus'; ?>"></i>
                     <?php echo $editar ? 'Guardar cambios' : 'Crear Producto'; ?>
@@ -369,7 +307,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
         <tbody>
         <?php while($p = mysqli_fetch_assoc($productos)): ?>
         <tr>
-            <td style="color:rgba(255,255,255,.4);"><?php echo $p['id_producto']; ?></td>
+            <td class="text-muted-col"><?php echo $p['id_producto']; ?></td>
             <td>
                 <?php
                 // Soporta rutas relativas guardadas (images/productos/...) y URLs externas
@@ -379,15 +317,15 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                 }
                 ?>
                 <img src="<?php echo htmlspecialchars($imgSrc); ?>"
-                     style="width:52px;height:52px;object-fit:cover;border-radius:8px;background:#2a2a2a;"
-                     onerror="this.style.display='none'">
+                     class="prod-img-sm"
+                     onerror="handleImgError(this)">
             </td>
             <td>
                 <strong><?php echo htmlspecialchars($p['nombre']); ?></strong>
-                <div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:2px;"><?php echo htmlspecialchars(substr($p['descripcion'],0,40)); ?>...</div>
+                <div class="desc-sm"><?php echo htmlspecialchars(substr($p['descripcion'],0,40)); ?>...</div>
             </td>
-            <td><span style="background:#2a2a2a;padding:3px 10px;border-radius:20px;font-size:12px;"><?php echo htmlspecialchars($p['nombre_cat'] ?? '-'); ?></span></td>
-            <td style="font-weight:700;">S/ <?php echo number_format($p['precio'],2); ?></td>
+            <td><span class="badge-cat"><?php echo htmlspecialchars($p['nombre_cat'] ?? '-'); ?></span></td>
+            <td class="text-bold-col">S/ <?php echo number_format($p['precio'],2); ?></td>
             <td><?php echo $p['stock']; ?></td>
             <td>
                 <?php if($p['disponible']): ?>
@@ -396,8 +334,8 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
                     <span class="badge-estado badge-cancelado">Inactivo</span>
                 <?php endif; ?>
             </td>
-            <td><?php echo $p['favorito'] ? '⭐' : '<span style="color:rgba(255,255,255,.2)">—</span>'; ?></td>
-            <td><?php echo $p['estrella'] ? '🌟' : '<span style="color:rgba(255,255,255,.2)">—</span>'; ?></td>
+            <td><?php echo $p['favorito'] ? '⭐' : '<span class="empty-dash">—</span>'; ?></td>
+            <td><?php echo $p['estrella'] ? '🌟' : '<span class="empty-dash">—</span>'; ?></td>
             <td>
                 <div class="d-flex gap-2">
                     <a href="productos.php?editar=<?php echo $p['id_producto']; ?>" class="btn-edit-dark"><i class="fas fa-pen"></i></a>
@@ -412,53 +350,7 @@ $categorias  = mysqli_fetch_all(mysqli_query($conexion,"SELECT * FROM categorias
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-(function () {
-    const input     = document.getElementById('imagenArchivo');
-    const zone      = document.getElementById('uploadZone');
-    const prevWrap  = document.getElementById('imgPreviewWrap');
-    const prevImg   = document.getElementById('imgPreview');
-    const btnRemove = document.getElementById('btnRemoveImg');
 
-    function showPreview(file) {
-        if (!file || !file.type.startsWith('image/')) return;
-        const reader = new FileReader();
-        reader.onload = e => {
-            prevImg.src = e.target.result;
-            prevWrap.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function clearPreview() {
-        prevImg.src = '';
-        prevWrap.style.display = 'none';
-        input.value = '';
-    }
-
-    input.addEventListener('change', () => {
-        if (input.files && input.files[0]) showPreview(input.files[0]);
-        else clearPreview();
-    });
-
-    btnRemove && btnRemove.addEventListener('click', clearPreview);
-
-    // Drag & drop
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-    zone.addEventListener('drop', e => {
-        e.preventDefault();
-        zone.classList.remove('dragover');
-        const dt = e.dataTransfer;
-        if (dt && dt.files && dt.files[0]) {
-            // Asignar al input
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(dt.files[0]);
-            input.files = dataTransfer.files;
-            showPreview(dt.files[0]);
-        }
-    });
-})();
-</script>
+<script src="../assets/js/admin_productos.js"></script>
 </body>
 </html>

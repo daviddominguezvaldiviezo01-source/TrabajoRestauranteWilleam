@@ -3,6 +3,8 @@ session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
 if (!isset($_SESSION['rol']) || $_SESSION['rol'] != 'admin') { header("Location:../cliente/login.php"); exit(); }
 
+/** @var mysqli $conexion */
+
 $msg = '';
 if (isset($_POST['crear'])) {
     $nombre = trim($_POST['nombre']);
@@ -48,8 +50,8 @@ $active_page = 'categorias';
     <!-- CREAR -->
     <div class="card-dark">
         <h4><i class="fas fa-plus"></i> Nueva Categoría</h4>
-        <form method="POST" class="form-dark" style="display:flex;gap:12px;align-items:flex-end;">
-            <div class="form-group-dark" style="flex:1;margin:0;">
+        <form method="POST" class="form-dark cat-form">
+            <div class="form-group-dark cat-form-group">
                 <label>Nombre de la categoría</label>
                 <input type="text" name="nombre" placeholder="Ej: Mariscos, Bebidas..." required>
             </div>
@@ -61,10 +63,10 @@ $active_page = 'categorias';
     <div class="card-dark">
         <h4><i class="fas fa-tags"></i> Categorías (<?php echo mysqli_num_rows($cats); ?>)</h4>
         <?php while($c=mysqli_fetch_assoc($cats)): ?>
-        <div style="background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="cat-item">
             <div>
-                <div style="font-weight:700;font-size:15px;"><?php echo htmlspecialchars($c['nombre']); ?></div>
-                <div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:3px;"><?php echo $c['total']; ?> producto(s)</div>
+                <div class="cat-name"><?php echo htmlspecialchars($c['nombre']); ?></div>
+                <div class="cat-count"><?php echo $c['total']; ?> producto(s)</div>
             </div>
             <a href="categorias.php?eliminar=<?php echo $c['id_categoria']; ?>"
                class="btn-del-dark" onclick="return confirm('¿Eliminar esta categoría?')">

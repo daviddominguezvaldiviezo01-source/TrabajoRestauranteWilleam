@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * ============================================================
  * ARCHIVO: delivery.php
@@ -16,6 +16,8 @@ iniciar_sesion_segura();
 if (!validar_rol('delivery')) {
     redirigir('cliente/login.php');
 }
+
+/** @var mysqli $conexion */
 
 $csrf_token = generar_token_csrf();
 $id_repartidor = intval($_SESSION['usuario']);
@@ -108,6 +110,10 @@ foreach ($pedidos_asignados as $pedido) {
     }
 }
 
+/**
+ * @param string $estado
+ * @return string
+ */
 function tipo_badge($estado) {
     switch ($estado) {
         case 'ir a recoger': return 'badge-preparando';
@@ -136,7 +142,7 @@ function tipo_badge($estado) {
                 <h1>Pedidos asignados</h1>
                 <p class="delivery-description">Revisa tus entregas, actualiza estados y visualiza el detalle completo de cada pedido asignado.</p>
             </div>
-            <div style="display:flex;gap:12px;align-items:center">
+            <div class="header-actions">
                 <div class="delivery-notifications">
                     <button id="notifBtn" class="notif-btn" aria-label="Notificaciones">
                         <i class="fas fa-bell"></i>
@@ -272,154 +278,8 @@ function tipo_badge($estado) {
             </section>
         <?php endif; ?>
     </main>
-    <style>
-    .delivery-notifications{position:relative}
-    .notif-btn{background:transparent;border:none;color:inherit;font-size:18px;position:relative;cursor:pointer}
-    .notif-count{display:none}
-    .notif-panel{position:absolute;right:0;top:40px;background:#fff;color:#111;border:1px solid #ddd;border-radius:8px;min-width:260px;box-shadow:0 6px 24px rgba(0,0,0,.12);display:none;z-index:30;padding:8px}
-    .notif-panel.show{display:block}
-    .notif-item{padding:8px;border-bottom:1px solid #f1f1f1;font-size:13px}
-    .notif-item:last-child{border-bottom:none}
-    .notif-item strong{display:block}
-    /* Toast notification */
-    .notif-toast{position:fixed;right:24px;top:80px;z-index:9999;display:flex;align-items:center;gap:12px;background:#1f1f1f;border:1px solid #333;padding:12px 16px;border-radius:10px;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transform:translateY(-8px);transition:opacity .25s,transform .25s}
-    .notif-toast.show{opacity:1;transform:translateY(0)}
-    .notif-toast .bell{background:#c8102e;padding:8px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
-    .notif-toast .msg{font-weight:700;font-size:14px}
-    </style>
+    
 
-    <script>
-    (function(){
-        const btn = document.getElementById('notifBtn');
-        const panel = document.getElementById('notifPanel');
-        let lastIr = 0;
-        let initialLoaded = false;
-
-        function showToast(message){
-            let toast = document.getElementById('notifToast');
-            if(!toast){
-                toast = document.createElement('div');
-                toast.id = 'notifToast';
-                toast.className = 'notif-toast';
-                toast.innerHTML = '<div class="bell"><i class="fas fa-bell" style="color:#fff"></i></div><div class="msg"></div>';
-                document.body.appendChild(toast);
-            }
-            toast.querySelector('.msg').textContent = message;
-            toast.classList.add('show');
-            setTimeout(()=>{ toast.classList.remove('show'); },5000);
-        }
-
-        // Usar SSE para recibir notificaciones en tiempo real
-        let es;
-        try {
-            es = new EventSource('tools/sse_orders.php');
-        } catch(e) { console.error('EventSource no disponible', e); }
-
-        function renderRecent(orders){
-            panel.innerHTML = '';
-            if(!orders || orders.length===0){ panel.innerHTML = '<div class="notif-item">No hay nuevos pedidos</div>'; return; }
-            orders.forEach(o=>{
-                const div = document.createElement('div');
-                div.className = 'notif-item';
-                div.innerHTML = '<strong>Pedido #' + o.id_pedido + '</strong>' +
-                    '<div>Total: S/ ' + (o.total.toFixed? o.total.toFixed(2): Number(o.total).toFixed(2)) + '</div>' +
-                    '<div>Cliente: ' + (o.cliente || o.email || 'Invitado') + '</div>';
-                panel.appendChild(div);
-            });
-        }
-
-        let pollingIntervalId = null;
-        function startPolling(){
-            if (pollingIntervalId) return;
-            async function fetchCountPolling(){
-                try{
-                    const r = await fetch('tools/get_new_orders_count.php');
-                    const j = await r.json();
-                    const c = parseInt(j.count || 0,10);
-                    if (!initialLoaded) {
-                        lastIr = c;
-                        initialLoaded = true;
-                    } else {
-                        if (c > lastIr) {
-                            const msg = 'Nuevo pedido pendiente';
-                            showToast(msg);
-                            try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }catch(e){}
-                            if (panel.classList.contains('show')) fetch('tools/get_recent_orders.php').then(r=>r.json()).then(j=>renderRecent(j.orders||[])).catch(()=>{});
-                        }
-                        lastIr = c;
-                    }
-                }catch(e){ console.error('poll fetchCount error', e); }
-            }
-            fetchCountPolling();
-            pollingIntervalId = setInterval(fetchCountPolling, 2000);
-        }
-
-        if (es) {
-            es.addEventListener('orders', function(e){
-                try{
-                    const payload = JSON.parse(e.data);
-                    const counts = payload.counts || {};
-                    const totalIr = counts['ir a recoger'] || 0;
-                    if (!initialLoaded) {
-                        lastIr = totalIr;
-                        initialLoaded = true;
-                    } else {
-                        if (totalIr > lastIr) {
-                            const recent = payload.recent || payload.orders || [];
-                            const last = recent.length ? recent[0] : null;
-                            const msg = last ? ('Nuevo pedido #' + last.id_pedido + (last.cliente? (' - ' + last.cliente) : '')) : 'Nuevo pedido pendiente';
-                            showToast(msg);
-                            try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }catch(e){}
-                            renderRecent(payload.recent || payload.orders || []);
-                        }
-                        lastIr = totalIr;
-                    }
-                }catch(err){ console.error('Parse SSE orders', err); }
-            });
-
-            es.onerror = function(err){ console.error('SSE error', err); startPolling(); };
-        } else {
-            startPolling();
-        }
-
-        btn.addEventListener('click', function(e){
-            const was = panel.classList.toggle('show');
-            panel.setAttribute('aria-hidden', !was);
-            if (was && es) {
-                fetch('tools/get_recent_orders.php').then(r=>r.json()).then(j=>{ renderRecent(j.orders || []); }).catch(()=>{});
-            }
-        });
-
-        // Interceptar formularios de acción para ejecutar vía AJAX
-        document.addEventListener('submit', function(ev){
-            const form = ev.target;
-            if (!form.classList.contains('delivery-action-form')) return;
-            ev.preventDefault();
-            const data = new FormData(form);
-            fetch('tools/update_order_status.php', {
-                method: 'POST',
-                body: data,
-                credentials: 'same-origin'
-            }).then(r=>r.json()).then(j=>{
-                if (j.success) {
-                    // Actualizar visualmente la tarjeta: cambiar badge a 'En camino' o 'Entregado' o 'Cancelado'
-                    const card = form.closest('.delivery-card');
-                    const badge = card && card.querySelector('.badge-estado');
-                    if (badge) {
-                        if (j.action === 'tomar') { badge.textContent = 'En camino'; badge.className = 'badge-estado ' + 'badge-en_camino'; }
-                        if (j.action === 'entregar') { badge.textContent = 'Entregado'; badge.className = 'badge-estado ' + 'badge-entregado'; }
-                        if (j.action === 'cancelar') { badge.textContent = 'Cancelado'; badge.className = 'badge-estado ' + 'badge-cancelado'; }
-                    }
-                    // Mostrar alerta breve
-                    const alert = document.createElement('div'); alert.className='delivery-alert'; alert.textContent = '✔ Acción aplicada: ' + j.action; document.body.prepend(alert);
-                    setTimeout(()=>alert.remove(),3000);
-                } else {
-                    const alert = document.createElement('div'); alert.className='delivery-alert'; alert.textContent = '✖ Error: ' + (j.message || 'No se aplicó'); document.body.prepend(alert);
-                    setTimeout(()=>alert.remove(),4000);
-                }
-            }).catch(err=>{ console.error('update err', err); });
-        });
-    })();
-    </script>
+    <script src="assets/js/delivery.js"></script>
 </body>
 </html>

@@ -1,0 +1,2 @@
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-canvas-wrap{position:relative;}
