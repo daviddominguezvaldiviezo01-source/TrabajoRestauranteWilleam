@@ -478,7 +478,7 @@ function formatear_precio($precio) {
  * @return string Fecha formateada
  * 
  * EJEMPLO:
- * echo formatear_fecha('2024-06-01');  // Salida: 01/06/2024
+ * echo formatear_fecha('2026-06-01');  // Salida: 01/06/2026
  */
 function formatear_fecha($fecha, $formato = 'd/m/Y') {
     return date($formato, strtotime($fecha));

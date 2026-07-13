@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
+/** @var mysqli $conexion */
 require_once dirname(__FILE__) . '/../config/config.php';
 
 $id_usuario = isset($_SESSION['usuario']) ? intval($_SESSION['usuario']) : null;
@@ -49,7 +50,7 @@ if (!in_array($metodo_pago, $metodos_validos)) {
 // ==========================================
 // MANEJAR DIRECCIÓN (CORREGIDO)
 // ==========================================
-if (!empty($nueva_direccion)) {
+if (empty($id_direccion) && !empty($nueva_direccion)) {
     if ($id_usuario) {
         $stmtDir = mysqli_prepare($conexion, "INSERT INTO direcciones (id_usuario, direccion, referencia) VALUES (?,?,?)");
         mysqli_stmt_bind_param($stmtDir, "iss", $id_usuario, $nueva_direccion, $referencia);
@@ -206,94 +207,7 @@ if (defined('MAIL_ENABLED') && MAIL_ENABLED && !empty($correo)) {
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    background:#111;
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    font-family:'Segoe UI',sans-serif;
-    color:#fff;
-    padding:20px;
-}
-.boucher {
-    background:#1a1a1a;
-    border:1px solid #2a2a2a;
-    border-radius:20px;
-    padding:36px 32px;
-    max-width:480px;
-    width:100%;
-    text-align:center;
-    box-shadow:0 20px 60px rgba(0,0,0,.6);
-}
-.check-circle {
-    width:80px;height:80px;
-    background:rgba(76,175,80,.15);
-    border:2px solid rgba(76,175,80,.4);
-    border-radius:50%;
-    display:flex;align-items:center;justify-content:center;
-    margin:0 auto 20px;
-    animation:pulse 1.5s infinite;
-}
-.check-circle i { font-size:36px; color:#81c784; }
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
-.boucher h1 { font-size:1.6rem; font-weight:900; color:#fff; margin-bottom:6px; }
-.boucher .sub { color:rgba(255,255,255,.4); font-size:14px; margin-bottom:20px; }
-.pedido-num {
-    background:#111;border:1px solid #2a2a2a;border-radius:12px;
-    padding:14px;font-size:1.4rem;font-weight:900;color:#fff;
-    margin-bottom:16px;letter-spacing:1px;
-}
-/* Notificacion de email */
-.email-badge {
-    display:flex;align-items:center;gap:10px;
-    padding:11px 16px;border-radius:10px;
-    margin-bottom:16px;font-size:13px;font-weight:600;
-    text-align:left;
-}
-.email-badge.ok  { background:rgba(76,175,80,.12); border:1px solid rgba(76,175,80,.3); color:#81c784; }
-.email-badge.err { background:rgba(255,152,0,.10); border:1px solid rgba(255,152,0,.3); color:#ffb74d; }
-.email-badge i { font-size:16px; flex-shrink:0; }
-.info-box {
-    background:#111;border:1px solid #2a2a2a;border-radius:12px;
-    padding:16px;margin-bottom:16px;text-align:left;
-}
-.info-row {
-    display:flex;justify-content:space-between;align-items:center;
-    padding:9px 0;border-bottom:1px solid #1e1e1e;font-size:14px;
-}
-.info-row:last-child{border-bottom:none;}
-.info-row .lbl{color:rgba(255,255,255,.4);font-weight:600;display:flex;align-items:center;gap:6px;}
-.info-row .val{color:#fff;font-weight:700;font-size:13px;max-width:220px;text-align:right;}
-/* Botones */
-.btn-group { display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
-.btn-home {
-    background:#c8102e;color:#fff;border:none;border-radius:30px;
-    padding:12px 22px;font-weight:700;font-size:13px;
-    text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    transition:.2s;
-}
-.btn-home:hover{background:#a50d26;color:#fff;transform:translateY(-2px);}
-.btn-download {
-    background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border:none;border-radius:30px;
-    padding:12px 22px;font-weight:700;font-size:13px;
-    text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    transition:.2s;box-shadow:0 4px 15px rgba(25,118,210,.35);
-}
-.btn-download:hover{background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(25,118,210,.5);}
-.btn-sec {
-    background:transparent;color:rgba(255,255,255,.5);
-    border:1.5px solid #2a2a2a;border-radius:30px;
-    padding:11px 20px;font-weight:600;font-size:13px;
-    text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    transition:.2s;
-}
-.btn-sec:hover{border-color:rgba(255,255,255,.3);color:#fff;}
-.countdown{font-size:12px;color:rgba(255,255,255,.25);margin-top:16px;}
-</style>
+<link rel="stylesheet" href="../assets/css/procesar_pedido.css">
 </head>
 <body>
 <div class="boucher">
@@ -311,23 +225,16 @@ body {
     <?php elseif (!empty($correo)): ?>
     <div class="email-badge err">
         <i class="fas fa-triangle-exclamation"></i>
-        <span>No se pudo enviar el correo. Descarga tu voucher más abajo.</span>
+        <span>No se pudo enviar el correo.
+            <?php if (!empty($email_resultado['error'])): ?>
+                Error: <?php echo htmlspecialchars($email_resultado['error']); ?>.
+            <?php endif; ?>
+            Descarga tu voucher más abajo.
+        </span>
     </div>
     <?php endif; ?>
 
     <div class="info-box">
-        <div class="info-row">
-            <span class="lbl"><i class="fas fa-money-bill"></i> Total</span>
-            <span class="val">S/ <?php echo number_format($total_con_impuesto,2); ?></span>
-        </div>
-        <div class="info-row">
-            <span class="lbl"><i class="fas fa-credit-card"></i> Método de pago</span>
-            <span class="val"><?php echo ucfirst($metodo_pago); ?></span>
-        </div>
-        <div class="info-row">
-            <span class="lbl"><i class="fas fa-clock"></i> Estado</span>
-            <span class="val" style="color:#ffc107;">Pendiente</span>
-        </div>
         <div class="info-row">
             <span class="lbl"><i class="fas fa-user"></i> Cliente</span>
             <span class="val"><?php echo htmlspecialchars($nombre); ?></span>
@@ -335,6 +242,36 @@ body {
         <div class="info-row">
             <span class="lbl"><i class="fas fa-map-marker-alt"></i> Dirección</span>
             <span class="val"><?php echo htmlspecialchars($nueva_direccion.($referencia?' ('.$referencia.')':'')); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="lbl"><i class="fas fa-credit-card"></i> Método de pago</span>
+            <span class="val"><?php echo ucfirst($metodo_pago); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="lbl"><i class="fas fa-clock"></i> Estado</span>
+            <span class="val text-warning-custom">Pendiente</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row">
+            <span class="lbl">Subtotal</span>
+            <span class="val">S/ <?php echo number_format($total, 2); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">IGV (18%)</span>
+            <span class="val">S/ <?php echo number_format($impuesto, 2); ?></span>
+        </div>
+        <div class="info-row">
+            <span class="lbl">Delivery</span>
+            <span class="val">S/ <?php echo number_format($delivery, 2); ?></span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="info-row total-row">
+            <span class="lbl">Total a Pagar</span>
+            <span class="val">S/ <?php echo number_format($total_con_impuesto,2); ?></span>
         </div>
     </div>
 
@@ -351,16 +288,9 @@ body {
     <div class="countdown"><i class="fas fa-spinner fa-spin"></i> Redirigiendo en <span id="t">30</span>s...</div>
 </div>
 
-<script>
-let t = 30;
-const el = document.getElementById('t');
-const iv = setInterval(() => {
-    t--;
-    if (el) el.textContent = t;
-    if (t <= 0) { clearInterval(iv); window.location.href = 'index.php'; }
-}, 1000);
-</script>
 
+
+<script src="../assets/js/procesar_pedido.js"></script>
 </body>
 </html>
 

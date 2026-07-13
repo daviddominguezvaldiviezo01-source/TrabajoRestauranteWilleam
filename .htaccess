@@ -13,6 +13,9 @@
     RewriteEngine On
     RewriteBase /RESTAURANTE2/
     
+    # Redirigir sitemap.xml a sitemap.php para generación dinámica
+    RewriteRule ^sitemap\.xml$ sitemap.php [L]
+    
     # Redirigir a index.php para archivos no existentes
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

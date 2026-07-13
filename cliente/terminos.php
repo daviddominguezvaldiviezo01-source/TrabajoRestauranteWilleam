@@ -9,36 +9,18 @@ session_start();
 <title>Términos y Condiciones - Brisamar</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#111; color:#fff; font-family:'Segoe UI',sans-serif; min-height:100vh; }
-.navbar-top { background:#c8102e; padding:0 40px; height:64px; display:flex; align-items:center; position:sticky; top:0; z-index:200; box-shadow:0 2px 12px rgba(0,0,0,.5); }
-.navbar-inner { max-width:1300px; width:100%; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
-.logo { font-size:22px; font-weight:900; color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; }
-.btn-nav-back { color:#fff; text-decoration:none; font-weight:600; font-size:14px; display:flex; align-items:center; gap:7px; opacity:.85; transition:.2s; }
-.btn-nav-back:hover { opacity:1; color:#fff; }
-.page-wrap { max-width:1000px; margin:40px auto; padding:0 20px 60px; }
-.page-title { font-size:2rem; font-weight:900; margin-bottom:20px; display:flex; align-items:center; gap:12px; }
-.content-box { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:18px; padding:32px; }
-.content-box h2 { color:#fff; margin-top:24px; font-size:1.3rem; }
-.content-box h3 { color:#ffdd99; margin-top:22px; font-size:1.1rem; }
-.content-box p, .content-box li { color:rgba(255,255,255,.8); line-height:1.8; margin-bottom:12px; }
-.content-box ol { margin-top:12px; padding-left:22px; }
-.content-box ol li { margin-bottom:12px; }
-.content-box a { color:#c8102e; text-decoration:none; }
-.content-box a:hover { text-decoration:underline; }
-</style>
+<link rel="stylesheet" href="../assets/css/terminos.css">
 </head>
 <body>
 <nav class="navbar-top">
     <div class="navbar-inner">
-        <a href="index.php" class="logo"><i class="fas fa-fire" style="color:#ffcc00"></i> Brisamar</a>
+        <a href="index.php" class="logo"><i class="fas fa-fire icon-fire"></i> Brisamar</a>
         <a href="index.php" class="btn-nav-back"><i class="fas fa-arrow-left"></i> Volver al menú</a>
     </div>
 </nav>
 
 <div class="page-wrap">
-    <div class="page-title"><i class="fas fa-file-contract" style="color:#c8102e"></i> Términos y Condiciones</div>
+    <div class="page-title"><i class="fas fa-file-contract icon-danger"></i> Términos y Condiciones</div>
     <div class="content-box">
         <p><strong>Última actualización:</strong> 18 de mayo de 2026</p>
         <p>Bienvenido a Brisamar. Los presentes Términos y Condiciones regulan el acceso y uso de nuestro sitio web y la realización de pedidos a través del mismo. Al navegar, registrarse o realizar un pedido, usted acepta de manera libre, voluntaria e informada estos Términos en su totalidad. Si no está de acuerdo, le rogamos que no utilice el sitio.</p>

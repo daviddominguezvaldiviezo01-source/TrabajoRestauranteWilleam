@@ -91,36 +91,38 @@ $active_page = 'configuracion';
     <div class="card-dark">
         <h4><i class="fas fa-image"></i> Imagen de Bienvenida (Hero)</h4>
         
-        <div class="row g-3" style="margin-bottom:20px;">
+        <div class="row g-3 config-hero-row">
             <div class="col-md-6">
-                <div style="background:#111;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;padding:16px;text-align:center;">
+                <div class="config-hero-box">
                     <?php if(!empty($hero_image)): ?>
-                        <img src="<?php echo htmlspecialchars($hero_image); ?>" alt="Hero actual" style="max-width:100%;height:auto;border-radius:8px;max-height:300px;">
-                        <p style="margin-top:12px;color:rgba(255,255,255,.6);font-size:13px;">Imagen actual del hero</p>
+                        <img src="<?php echo htmlspecialchars($hero_image); ?>" alt="Hero actual" class="config-hero-img">
+                        <p class="config-hero-label">Imagen actual del hero</p>
                     <?php else: ?>
-                        <div style="height:200px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.3);">
-                            <i class="fas fa-image" style="font-size:48px;"></i>
+                        <div class="config-hero-empty">
+                            <i class="fas fa-image config-hero-icon"></i>
                         </div>
-                        <p style="margin-top:12px;color:rgba(255,255,255,.6);font-size:13px;">Sin imagen cargada</p>
+                        <p class="config-hero-label">Sin imagen cargada</p>
                     <?php endif; ?>
                 </div>
             </div>
-            
             <div class="col-md-6">
-                <form method="POST" enctype="multipart/form-data" class="form-dark">
-                    <div class="form-group-dark">
-                        <label for="hero_imagen">Seleccionar nueva imagen</label>
-                        <input type="file" id="hero_imagen" name="hero_imagen" accept="image/*" required>
-                        <small style="color:rgba(255,255,255,.4);display:block;margin-top:8px;">
-                            Recomendado: 1200×380px o superior.<br>
-                            Formatos: JPG, PNG, GIF
-                        </small>
-                    </div>
-                    <button type="submit" class="btn-red" style="width:100%;"><i class="fas fa-upload"></i> Actualizar Imagen</button>
-                </form>
+                <div class="card-dark config-upload-card">
+                    <h4><i class="fas fa-upload"></i> Subir Nueva Imagen</h4>
+                    <form method="POST" enctype="multipart/form-data" class="form-dark">
+                        <div class="form-group-dark">
+                            <label>Selecciona un archivo JPG, PNG o WEBP</label>
+                            <input type="file" name="hero_imagen" id="hero_imagen" accept="image/*" required>
+                            <small class="config-help-text">
+                                Recomendado: 1920x1080px o superior.
+                                Formatos: JPG, PNG, GIF
+                            </small>
+                        </div>
+                        
+                        <button type="submit" class="btn-red btn-upload-hero"><i class="fas fa-upload"></i> Actualizar Imagen</button>
+                    </form>
                 
-                <div style="background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.2);border-radius:10px;padding:14px;margin-top:16px;color:rgba(255,255,255,.7);font-size:13px;">
-                    <i class="fas fa-info-circle"></i> <strong>Nota:</strong> Esta imagen aparecerá en el banner de bienvenida de la tienda. Se recomienda una imagen de alta calidad.
+                <div class="config-info-box">
+                    <i class="fas fa-info-circle"></i> La imagen del hero es la que se muestra en la parte superior de la página principal para los clientes.
                 </div>
             </div>
         </div>

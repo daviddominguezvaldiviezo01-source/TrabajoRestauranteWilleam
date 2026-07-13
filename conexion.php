@@ -1,16 +1,7 @@
 <?php
 
-$host     = "localhost";
-$usuario  = "root";
-$password = "";
-$bd       = "restaurant_bd";
+// Incluir configuración global y base de datos
+require_once __DIR__ . '/config/database.php';
 
-$conexion = mysqli_connect($host, $usuario, $password, $bd);
-
-if (!$conexion) {
-    die("Error de conexión: " . mysqli_connect_error());
-}
-
-mysqli_set_charset($conexion, "utf8mb4");
-
-?>
+// Inicializar sistema de verificación de emails y teléfonos
+require_once __DIR__ . '/includes/init_verification_system.php';

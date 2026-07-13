@@ -60,6 +60,9 @@ define('NOTIFICATION_RECIPIENT_EMAIL', 'RestaurantesBrisamar@gmail.com');
 /** @const bool MAIL_ENABLED - Habilita envío server-side con PHPMailer + Gmail SMTP */
 define('MAIL_ENABLED', true);
 
+/** @const bool MAIL_DEBUG - Habilita debug SMTP para PHPMailer (solo desarrollo) */
+define('MAIL_DEBUG', false);
+
 /** @const string MAIL_FROM - Dirección FROM usada en emails (cuenta Gmail del restaurante) */
 define('MAIL_FROM', 'RestaurantesBrisamar@gmail.com');
 
@@ -87,7 +90,7 @@ define('NOTIFICATION_RECIPIENT_EMAIL_ADMIN', 'RestaurantesBrisamar@gmail.com');
 
 
 /** @const string CONTACT_ADDRESS - Dirección física */
-define('CONTACT_ADDRESS', 'Calle Principal 123');
+define('CONTACT_ADDRESS', 'Calle Psicina 123, Tumbes, Perú');
 
 // ──────────────────────────────────────────────────────────
 // CONFIGURACIÓN DE BASE DE DATOS
@@ -113,7 +116,7 @@ define('DB_CHARSET', 'utf8mb4');
 // ──────────────────────────────────────────────────────────
 
 /** @const string SECRET_KEY - Clave secreta para tokens y encriptación */
-define('SECRET_KEY', 'tu_clave_secreta_super_segura_aqui_2024');
+define('SECRET_KEY', 'tu_clave_secreta_super_segura_aqui_2026');
 
 /** @const int SESSION_TIMEOUT - Tiempo de sesión en segundos (30 minutos) */
 define('SESSION_TIMEOUT', 1800);

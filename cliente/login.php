@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once dirname(__FILE__) . '/../conexion.php';
+/** @var mysqli $conexion */
 
 $error = '';
 $tab = 'login';
@@ -40,6 +41,7 @@ if(isset($_POST['login'])){
                 $_SESSION['usuario'] = $usuario['id_usuario'];
                 $_SESSION['nombre']  = $usuario['nombre'];
                 $_SESSION['rol']     = $usuario['rol'];
+                $_SESSION['avatar']  = $usuario['avatar'] ?? null;
                 if ($usuario['rol'] === 'admin') {
                     header("Location: ../admin/dashboard.php");
                 } elseif ($usuario['rol'] === 'delivery') {
@@ -95,135 +97,13 @@ if(isset($_POST['registro'])){
 <title>Ingresar - Brisamar</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    background:#111;
-    min-height:100vh;
-    font-family:'Segoe UI',sans-serif;
-    display:flex;
-    flex-direction:column;
-}
-
-/* NAVBAR */
-.navbar-top {
-    background:#c8102e;
-    padding:0 40px;
-    height:64px;
-    display:flex;
-    align-items:center;
-    box-shadow:0 2px 12px rgba(0,0,0,.5);
-}
-.navbar-inner { max-width:1300px; width:100%; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
-.logo { font-size:22px; font-weight:900; color:#fff; text-decoration:none; display:flex; align-items:center; gap:10px; }
-.btn-nav-back { color:#fff; text-decoration:none; font-weight:600; font-size:14px; display:flex; align-items:center; gap:7px; opacity:.85; transition:.2s; }
-.btn-nav-back:hover { opacity:1; color:#fff; }
-
-/* LAYOUT */
-.auth-wrap {
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:40px 20px;
-}
-.auth-card {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    max-width:960px;
-    width:100%;
-    border-radius:20px;
-    overflow:hidden;
-    box-shadow:0 20px 60px rgba(0,0,0,.6);
-}
-
-/* PANEL IZQUIERDO */
-.auth-left {
-    background:#c8102e;
-    padding:50px 40px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    color:#fff;
-}
-.auth-left .brand { font-size:26px; font-weight:900; display:flex; align-items:center; gap:10px; margin-bottom:30px; }
-.auth-left h2 { font-size:2rem; font-weight:900; line-height:1.3; margin-bottom:16px; }
-.auth-left p { font-size:1rem; opacity:.85; margin-bottom:28px; }
-.feature-list { display:flex; flex-direction:column; gap:12px; }
-.feature-item { display:flex; align-items:center; gap:10px; font-size:14px; }
-.feature-item i { color:#ffcc00; width:18px; }
-.auth-left-footer { font-size:12px; opacity:.5; margin-top:30px; }
-
-/* PANEL DERECHO */
-.auth-right {
-    background:#1a1a1a;
-    padding:50px 40px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-}
-
-/* TABS */
-.auth-tabs { display:flex; gap:0; margin-bottom:30px; border-bottom:1px solid #2a2a2a; }
-.tab-btn {
-    background:none; border:none; color:rgba(255,255,255,.4);
-    font-weight:700; font-size:14px; cursor:pointer;
-    padding:10px 20px 12px; border-bottom:2px solid transparent;
-    transition:.2s; letter-spacing:.3px;
-}
-.tab-btn.active { color:#fff; border-bottom-color:#c8102e; }
-
-/* FORM */
-.tab-content { display:none; }
-.tab-content.active { display:block; }
-.tab-content h3 { font-size:1.4rem; font-weight:900; color:#fff; margin-bottom:6px; }
-.tab-content .sub { color:rgba(255,255,255,.4); font-size:13px; margin-bottom:22px; }
-
-.form-group { margin-bottom:16px; }
-.form-group label { display:block; color:rgba(255,255,255,.6); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:7px; }
-.form-group input {
-    width:100%; background:#111; border:1.5px solid #2a2a2a;
-    border-radius:10px; color:#fff; padding:11px 14px; font-size:14px; transition:.2s;
-}
-.form-group input:focus { outline:none; border-color:#c8102e; background:#161616; }
-.form-group input::placeholder { color:rgba(255,255,255,.2); }
-
-.btn-submit {
-    width:100%; background:#c8102e; color:#fff; border:none;
-    border-radius:10px; padding:13px; font-weight:700; font-size:15px;
-    cursor:pointer; transition:.2s; margin-top:6px;
-}
-.btn-submit:hover { background:#a50d26; transform:translateY(-1px); }
-
-.btn-guest {
-    width:100%; background:transparent; color:rgba(255,255,255,.5);
-    border:1.5px solid #2a2a2a; border-radius:10px; padding:11px;
-    font-weight:600; font-size:14px; cursor:pointer; transition:.2s; margin-top:10px;
-    text-decoration:none; display:block; text-align:center;
-}
-.btn-guest:hover { border-color:rgba(255,255,255,.3); color:#fff; }
-
-.alert-err {
-    background:rgba(200,16,46,.15); border:1px solid rgba(200,16,46,.3);
-    color:#ff8080; padding:11px 14px; border-radius:10px;
-    margin-bottom:18px; font-size:13px; display:flex; align-items:center; gap:8px;
-}
-
-.link-tab { color:#c8102e; cursor:pointer; font-weight:700; background:none; border:none; padding:0; font-size:13px; }
-.switch-text { text-align:center; margin-top:16px; color:rgba(255,255,255,.35); font-size:13px; }
-
-@media(max-width:700px){
-    .auth-card { grid-template-columns:1fr; }
-    .auth-left { display:none; }
-    .auth-right { padding:36px 24px; }
-}
-</style>
+<link rel="stylesheet" href="../assets/css/login.css">
 </head>
 <body>
 
 <nav class="navbar-top">
     <div class="navbar-inner">
-        <a href="index.php" class="logo"><i class="fas fa-fire" style="color:#ffcc00;"></i> Brisamar</a>
+        <a href="index.php" class="logo"><i class="fas fa-fire icon-fire"></i> Brisamar</a>
         <a href="index.php" class="btn-nav-back"><i class="fas fa-arrow-left"></i> Volver al menú</a>
     </div>
 </nav>
@@ -234,7 +114,7 @@ body {
         <!-- IZQUIERDA -->
         <div class="auth-left">
             <div>
-                <div class="brand"><i class="fas fa-fire" style="color:#ffcc00;"></i> Brisamar</div>
+                <div class="brand"><i class="fas fa-fire icon-fire"></i> Brisamar</div>
                 <h2>Los mejores sabores del mar</h2>
                 <p>Inicia sesión para disfrutar de una experiencia de pedido más rápida y personalizada.</p>
                 <div class="feature-list">
@@ -244,7 +124,7 @@ body {
                     <div class="feature-item"><i class="fas fa-check"></i> Compra segura solo con cuenta registrada</div>
                 </div>
             </div>
-            <div class="auth-left-footer">© 2024 Brisamar. Todos los derechos reservados.</div>
+            <div class="auth-left-footer">© 2026 Brisamar. Todos los derechos reservados.</div>
         </div>
 
         <!-- DERECHA -->
@@ -279,6 +159,9 @@ body {
                     <div class="form-group">
                         <label>Contraseña</label>
                         <input type="password" name="clave" placeholder="••••••••" required>
+                    </div>
+                    <div style="text-align: right; margin-top: -10px; margin-bottom: 20px;">
+                        <a href="forgot_password.php" style="color: #dc2626; font-size: 13px; text-decoration: none; font-weight: 500;">¿Olvidaste tu contraseña?</a>
                     </div>
                     <button type="submit" name="login" class="btn-submit">Ingresar</button>
                 </form>
@@ -326,13 +209,7 @@ body {
     </div>
 </div>
 
-<script>
-function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(tab).classList.add('active');
-    btn.classList.add('active');
-}
-</script>
+
+<script src="../assets/js/login.js"></script>
 </body>
 </html>

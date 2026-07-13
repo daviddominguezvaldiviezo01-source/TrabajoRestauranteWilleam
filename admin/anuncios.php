@@ -109,10 +109,7 @@ $active_page = 'anuncios';
 <title>Publicidad - Brisamar Admin</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<style>
-.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:20px;}
-.chart-canvas-wrap{position:relative;}
-</style>
+<link rel="stylesheet" href="../assets/css/admin_anuncios.css">
 </head>
 <body>
 <?php include('_admin_layout.php'); ?>
@@ -124,7 +121,7 @@ $active_page = 'anuncios';
     </div>
 
     <?php if($message): ?>
-    <div class="alert-dark-success" style="background:<?php echo ($messageType==='error') ? 'rgba(244,67,54,.12)' : 'rgba(76,175,80,.12)'; ?>;border:1px solid <?php echo ($messageType==='error') ? 'rgba(244,67,54,.3)' : 'rgba(76,175,80,.3)'; ?>;color:<?php echo ($messageType==='error') ? '#ef9a9a' : '#81c784'; ?>;margin-bottom:20px;">
+    <div class="<?php echo ($messageType==='error') ? 'alert-error-anuncio' : 'alert-success-anuncio'; ?>">
         <i class="fas <?php echo ($messageType==='error') ? 'fa-triangle-exclamation' : 'fa-check-circle'; ?>"></i>
         <span><?php echo htmlspecialchars($message); ?></span>
     </div>
@@ -132,7 +129,7 @@ $active_page = 'anuncios';
 
     <div class="card-dark">
         <h4><i class="fas fa-bullhorn"></i> Nueva publicidad</h4>
-        <p style="color:rgba(255,255,255,.7);margin-bottom:18px;">Sube un nuevo anuncio para que aparezca en el carrusel de inicio.</p>
+        <p class="anuncio-desc">Sube un nuevo anuncio para que aparezca en el carrusel de inicio.</p>
         <form class="form-dark" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="accion" value="subir_anuncio">
             <div class="form-group-dark">
@@ -141,7 +138,7 @@ $active_page = 'anuncios';
             </div>
             <div class="form-group-dark">
                 <label for="descripcion">Descripción</label>
-                <textarea id="descripcion" name="descripcion" rows="3" placeholder="Texto breve del anuncio (opcional)" style="resize:vertical;"></textarea>
+                <textarea id="descripcion" name="descripcion" rows="3" placeholder="Texto breve del anuncio (opcional)" class="anuncio-textarea"></textarea>
             </div>
             <div class="form-group-dark">
                 <label for="enlace">Enlace</label>
@@ -167,7 +164,7 @@ $active_page = 'anuncios';
                 <tr>
                     <td><?php echo $anuncio['id_anuncio']; ?></td>
                     <td><?php echo htmlspecialchars($anuncio['titulo'] ?: 'Sin título'); ?></td>
-                    <td><a href="../<?php echo htmlspecialchars($anuncio['imagen']); ?>" target="_blank" style="color:#fff;text-decoration:none;">Ver</a></td>
+                    <td><a href="../<?php echo htmlspecialchars($anuncio['imagen']); ?>" target="_blank" class="anuncio-link">Ver</a></td>
                     <td><?php echo $anuncio['activo'] ? 'Sí' : 'No'; ?></td>
                     <td><?php echo date('d/m/Y H:i', strtotime($anuncio['creado_en'])); ?></td>
                     <td><a href="anuncios.php?eliminar_ad=<?php echo $anuncio['id_anuncio']; ?>" class="btn-del-dark" onclick="return confirm('Eliminar este anuncio?');">Eliminar</a></td>
@@ -176,7 +173,7 @@ $active_page = 'anuncios';
             </tbody>
         </table>
         <?php else: ?>
-        <p style="color:rgba(255,255,255,.65);">No hay anuncios publicados aún.</p>
+        <p class="anuncio-empty">No hay anuncios publicados aún.</p>
         <?php endif; ?>
     </div>
 </div>

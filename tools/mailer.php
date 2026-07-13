@@ -1,435 +1,569 @@
 <?php
-
 /**
  * ============================================================
  * ARCHIVO: tools/mailer.php
  * ============================================================
- * Servicio de envío de correo con voucher PDF adjunto.
- * Usa PHPMailer con Gmail SMTP y FPDF para el PDF.
- * ============================================================
+ * Contiene funciones para generar vouchers PDF y enviarlos por email.
  */
-
-// Indicar a FPDF dónde están los archivos de fuentes JSON
-if (!defined('FPDFONTPATH')) {
-  define('FPDFONTPATH', dirname(__FILE__) . '/../vendor/fpdf/font/');
-}
-
-require_once dirname(__FILE__) . '/../vendor/phpmailer/Exception.php';
-require_once dirname(__FILE__) . '/../vendor/phpmailer/PHPMailer.php';
-require_once dirname(__FILE__) . '/../vendor/phpmailer/SMTP.php';
-require_once dirname(__FILE__) . '/../vendor/fpdf/fpdf.php';
-
-if (!defined('SMTP_HOST')) {
-  require_once dirname(__FILE__) . '/../config/config.php';
-}
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception as MailerException;
+use PHPMailer\PHPMailer\Exception;
 
-/**
- * Convierte texto UTF-8 a ISO-8859-1 para FPDF (que no soporta UTF-8 nativo).
- */
-function _fpdf_str(string $text): string
-{
-  return iconv('UTF-8', 'ISO-8859-1//TRANSLIT//IGNORE', $text) ?: $text;
+// Cargar librerías vendor
+if (file_exists(__DIR__ . '/../vendor/phpmailer/Exception.php')) {
+    require_once __DIR__ . '/../vendor/phpmailer/Exception.php';
+    require_once __DIR__ . '/../vendor/phpmailer/PHPMailer.php';
+    require_once __DIR__ . '/../vendor/phpmailer/SMTP.php';
+} elseif (file_exists(__DIR__ . '/../vendor/phpmailer/src/Exception.php')) {
+    require_once __DIR__ . '/../vendor/phpmailer/src/Exception.php';
+    require_once __DIR__ . '/../vendor/phpmailer/src/PHPMailer.php';
+    require_once __DIR__ . '/../vendor/phpmailer/src/SMTP.php';
 }
 
+if (!defined('FPDFONTPATH')) {
+    define('FPDFONTPATH', __DIR__ . '/../vendor/fpdf/font/');
+}
+if (file_exists(__DIR__ . '/../vendor/fpdf/fpdf.php')) {
+    require_once __DIR__ . '/../vendor/fpdf/fpdf.php';
+}
+
+require_once __DIR__ . '/../config/config.php';
+
 /**
- * Genera el contenido PDF del voucher en memoria y lo devuelve como string.
- *
- * @param array $pedido  Datos del pedido
- * @param array $items   Productos del pedido
- * @return string        Contenido binario del PDF
+ * Genera el PDF del voucher de un pedido con un diseño más atractivo
+ * 
+ * @param array $datos_pedido
+ * @param array $items
+ * @return string PDF content
  */
-function generar_pdf_voucher(array $pedido, array $items): string
-{
-  $pdf = new FPDF('P', 'mm', 'A4');
-  $pdf->AddPage();
-  $pdf->SetAutoPageBreak(true, 20);
-
-  // ── Paleta de colores ──
-  $rojo_r = 200;
-  $rojo_g = 16;
-  $rojo_b = 46;
-  $osc_r  = 26;
-  $osc_g  = 26;
-  $osc_b  = 26;
-  $gris_r = 90;
-  $gris_g = 90;
-  $gris_b = 90;
-  $lin_r  = 220;
-  $lin_g  = 220;
-  $lin_b  = 220;
-
-  // ── ENCABEZADO con fondo rojo ──
-  $pdf->SetFillColor($rojo_r, $rojo_g, $rojo_b);
-  $pdf->Rect(0, 0, 210, 44, 'F');
-
-  $pdf->SetTextColor(255, 255, 255);
-  $pdf->SetFont('Arial', 'B', 22);
-  $pdf->SetXY(15, 7);
-  $pdf->Cell(130, 11, 'RESTAURANTE BRISAMAR', 0, 0, 'L');
-
-  // Número de pedido — esquina derecha
-  $pdf->SetFont('Arial', 'B', 13);
-  $pdf->SetXY(130, 7);
-  $pdf->Cell(65, 11, '# ' . str_pad($pedido['id_pedido'], 6, '0', STR_PAD_LEFT), 0, 1, 'R');
-
-  $pdf->SetFont('Arial', '', 10);
-  $pdf->SetXY(15, 20);
-  $pdf->Cell(130, 7, _fpdf_str('Los mejores sabores del mar, directo a tu mesa'), 0, 0, 'L');
-
-  $pdf->SetFont('Arial', 'B', 11);
-  $pdf->SetXY(15, 30);
-  $pdf->Cell(0, 7, 'COMPROBANTE DE PEDIDO', 0, 1, 'L');
-
-  // ── BLOQUE INFO CLIENTE / PEDIDO ──
-  $pdf->SetFillColor(248, 248, 248);
-  $pdf->SetDrawColor($lin_r, $lin_g, $lin_b);
-  $pdf->SetLineWidth(0.3);
-
-  $box_y = 50;
-  $pdf->Rect(15, $box_y, 180, 48, 'FD');
-
-  // Columna izquierda — Datos del cliente
-  $pdf->SetFont('Arial', 'B', 9);
-  $pdf->SetTextColor($gris_r, $gris_g, $gris_b);
-  $pdf->SetXY(20, $box_y + 4);
-  $pdf->Cell(80, 5, 'DATOS DEL CLIENTE', 0, 1);
-
-  $campos_izq = [
-    ['Nombre',   $pedido['nombre'] ?? '-'],
-    ['Correo',   $pedido['correo'] ?? '-'],
-    ['Telefono', $pedido['telefono'] ?? '-'],
-    ['Dir.',     $pedido['direccion'] ?? '-'],
-  ];
-  $y_col = $box_y + 11;
-  foreach ($campos_izq as [$lbl, $val]) {
-    $pdf->SetXY(20, $y_col);
-    $pdf->SetFont('Arial', 'B', 8);
-    $pdf->SetTextColor($gris_r, $gris_g, $gris_b);
-    $pdf->Cell(22, 5, $lbl . ':', 0);
-    $pdf->SetFont('Arial', '', 8);
-    $pdf->SetTextColor($osc_r, $osc_g, $osc_b);
-    // Truncar texto largo
-    $val_safe = _fpdf_str(mb_strimwidth($val, 0, 35, '...'));
-    $pdf->Cell(73, 5, $val_safe, 0);
-    $y_col += 8;
-  }
-
-  // Columna derecha — Datos del pedido
-  $pdf->SetFont('Arial', 'B', 9);
-  $pdf->SetTextColor($gris_r, $gris_g, $gris_b);
-  $pdf->SetXY(108, $box_y + 4);
-  $pdf->Cell(80, 5, 'DATOS DEL PEDIDO', 0, 1);
-
-  $fecha_fmt = '';
-  if (!empty($pedido['fecha'])) {
-    try {
-      $fecha_fmt = date('d/m/Y H:i', strtotime($pedido['fecha']));
-    } catch (\Exception $e) {
-      $fecha_fmt = $pedido['fecha'];
+function generar_pdf_voucher($datos_pedido, $items) {
+    if (!class_exists('FPDF')) {
+        return '';
     }
-  }
-
-  $campos_der = [
-    ['Fecha',   $fecha_fmt],
-    ['Pedido',  '# ' . str_pad($pedido['id_pedido'], 6, '0', STR_PAD_LEFT)],
-    ['Estado',  ucfirst($pedido['estado'] ?? 'pendiente')],
-    ['Pago',    ucfirst($pedido['metodo_pago'] ?? 'efectivo')],
-  ];
-  $y_col = $box_y + 11;
-  foreach ($campos_der as [$lbl, $val]) {
-    $pdf->SetXY(108, $y_col);
-    $pdf->SetFont('Arial', 'B', 8);
-    $pdf->SetTextColor($gris_r, $gris_g, $gris_b);
-    $pdf->Cell(22, 5, $lbl . ':', 0);
-    $pdf->SetFont('Arial', '', 8);
-    $pdf->SetTextColor($osc_r, $osc_g, $osc_b);
-    $pdf->Cell(60, 5, _fpdf_str($val), 0);
-    $y_col += 8;
-  }
-
-  // ── TABLA DE PRODUCTOS ──
-  $pdf->SetY(106);
-  $pdf->SetLineWidth(0.2);
-
-  // Cabecera
-  $pdf->SetFillColor($rojo_r, $rojo_g, $rojo_b);
-  $pdf->SetTextColor(255, 255, 255);
-  $pdf->SetFont('Arial', 'B', 9);
-  $pdf->SetDrawColor(180, 10, 30);
-  $pdf->SetX(15);
-  $pdf->Cell(82, 8, 'PRODUCTO', 1, 0, 'L', true);
-  $pdf->Cell(24, 8, 'CANT.', 1, 0, 'C', true);
-  $pdf->Cell(35, 8, 'P. UNIT.', 1, 0, 'R', true);
-  $pdf->Cell(34, 8, 'SUBTOTAL', 1, 1, 'R', true);
-
-  // Filas de productos
-  $pdf->SetTextColor($osc_r, $osc_g, $osc_b);
-  $pdf->SetFont('Arial', '', 9);
-  $pdf->SetDrawColor($lin_r, $lin_g, $lin_b);
-  $fill = false;
-  foreach ($items as $item) {
-    $bg_r = $fill ? 248 : 255;
-    $pdf->SetFillColor($bg_r, $bg_r, $bg_r);
-    $pdf->SetX(15);
-    $nombre_safe = _fpdf_str(mb_strimwidth($item['nombre'], 0, 40, '...'));
-    $pdf->Cell(82, 7, $nombre_safe, 1, 0, 'L', $fill);
-    $pdf->Cell(24, 7, (string)$item['cantidad'], 1, 0, 'C', $fill);
-    $pdf->Cell(35, 7, 'S/ ' . number_format((float)$item['precio'], 2), 1, 0, 'R', $fill);
-    $pdf->Cell(34, 7, 'S/ ' . number_format((float)$item['subtotal'], 2), 1, 1, 'R', $fill);
-    $fill = !$fill;
-  }
-
-  // ── TOTALES ──
-  $total         = (float)$pedido['total'];
-  $subtotal_bruto = round(($total - 5.00) / 1.18, 2);
-  $igv            = round($subtotal_bruto * 0.18, 2);
-  $delivery       = 5.00;
-
-  $pdf->SetFont('Arial', '', 9);
-  $pdf->SetFillColor(248, 248, 248);
-  $pdf->SetTextColor($osc_r, $osc_g, $osc_b);
-  $pdf->SetDrawColor($lin_r, $lin_g, $lin_b);
-
-  $pdf->SetX(15);
-  $pdf->Cell(141, 7, _fpdf_str('Subtotal (sin IGV)'), 1, 0, 'R', false);
-  $pdf->Cell(34, 7, 'S/ ' . number_format($subtotal_bruto, 2), 1, 1, 'R', false);
-
-  $pdf->SetX(15);
-  $pdf->Cell(141, 7, 'IGV (18%)', 1, 0, 'R', false);
-  $pdf->Cell(34, 7, 'S/ ' . number_format($igv, 2), 1, 1, 'R', false);
-
-  $pdf->SetX(15);
-  $pdf->Cell(141, 7, 'Delivery', 1, 0, 'R', false);
-  $pdf->Cell(34, 7, 'S/ ' . number_format($delivery, 2), 1, 1, 'R', false);
-
-  // Fila TOTAL — fondo rojo
-  $pdf->SetFillColor($rojo_r, $rojo_g, $rojo_b);
-  $pdf->SetTextColor(255, 255, 255);
-  $pdf->SetFont('Arial', 'B', 11);
-  $pdf->SetDrawColor(180, 10, 30);
-  $pdf->SetX(15);
-  $pdf->Cell(141, 10, 'TOTAL', 1, 0, 'R', true);
-  $pdf->Cell(34,  10, 'S/ ' . number_format($total, 2), 1, 1, 'R', true);
-
-  // ── PIE DE PÁGINA ──
-  $pdf->SetY(-22);
-  $pdf->SetDrawColor($rojo_r, $rojo_g, $rojo_b);
-  $pdf->SetLineWidth(0.5);
-  $pdf->Line(15, $pdf->GetY(), 195, $pdf->GetY());
-  $pdf->Ln(2);
-  $pdf->SetFont('Arial', '', 8);
-  $pdf->SetTextColor($gris_r, $gris_g, $gris_b);
-  $pdf->SetX(15);
-  $pdf->Cell(0, 5, 'Restaurante Brisamar  |  RestaurantesBrisamar@gmail.com  |  ' . (defined('CONTACT_PHONE') ? CONTACT_PHONE : '+51 917 328 085'), 0, 1, 'C');
-  $pdf->SetX(15);
-  $pdf->Cell(0, 5, _fpdf_str('Gracias por su preferencia. Este comprobante es valido como constancia de pedido.'), 0, 1, 'C');
-
-  // Devolver PDF como string (sin guardar en disco)
-  return $pdf->Output('S');
+    
+    $pdf = new FPDF('P', 'mm', 'A4');
+    $pdf->AddPage();
+      // Configuración de colores (Vibrant Light Mode)
+    $color_primario = [220, 38, 38]; // #DC2626 (Red Accent)
+    $color_texto_oscuro = [17, 17, 17]; // #111111
+    $color_texto_claro = [100, 100, 100]; // #646464
+    $color_fondo = [254, 242, 242]; // #FEF2F2
+    
+    // Borde de la página decorativo superior (grueso)
+    $pdf->SetFillColor($color_primario[0], $color_primario[1], $color_primario[2]);
+    $pdf->Rect(0, 0, 210, 25, 'F');
+    
+    $pdf->Ln(5);
+    
+    // Logo o Título de la marca en blanco sobre fondo rojo
+    $pdf->SetFont('Arial', 'B', 28);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0, 10, utf8_decode(SITE_NAME), 0, 1, 'C');
+    
+    // Subtítulo
+    $pdf->SetFont('Arial', '', 12);
+    $pdf->Cell(0, 6, utf8_decode('Voucher Oficial de Compra'), 0, 1, 'C');
+    $pdf->Ln(15);
+    
+    // Número de Pedido destacado
+    $pdf->SetFont('Arial', 'B', 16);
+    $pdf->SetTextColor($color_primario[0], $color_primario[1], $color_primario[2]);
+    $pdf->Cell(0, 10, utf8_decode('Pedido #') . str_pad($datos_pedido['id_pedido'], 6, '0', STR_PAD_LEFT), 0, 1, 'C');
+    
+    // Línea separadora
+    $pdf->SetDrawColor(220, 220, 220);
+    $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+    $pdf->Ln(8);
+    
+    // Bloque de Información del Pedido
+    $pdf->SetFillColor(250, 250, 250);
+    $pdf->SetDrawColor(230, 230, 230);
+    
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->SetTextColor($color_texto_oscuro[0], $color_texto_oscuro[1], $color_texto_oscuro[2]);
+    
+    // Fila 1
+    $pdf->Cell(35, 8, '  Cliente:', 'L,T', 0, 'L', true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(65, 8, utf8_decode($datos_pedido['nombre']), 'T', 0, 'L', true);
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(35, 8, '  Fecha:', 'T', 0, 'L', true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(55, 8, utf8_decode($datos_pedido['fecha']), 'R,T', 1, 'L', true);
+    
+    // Fila 2
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(35, 8, '  Correo:', 'L', 0, 'L', true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(65, 8, utf8_decode($datos_pedido['correo']), 0, 0, 'L', true);
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(35, 8, '  Metodo Pago:', 0, 0, 'L', true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(55, 8, utf8_decode($datos_pedido['metodo_pago_label']), 'R', 1, 'L', true);
+    
+    // Fila 3
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(35, 8, '  Telefono:', 'L,B', 0, 'L', true);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(65, 8, utf8_decode($datos_pedido['telefono'] ?? '-'), 'B', 0, 'L', true);
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->Cell(35, 8, '  Direccion:', 'B', 0, 'L', true);
+    
+    // Truncar dirección si es muy larga
+    $direccion = mb_strimwidth($datos_pedido['direccion'], 0, 30, '...');
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(55, 8, utf8_decode($direccion), 'R,B', 1, 'L', true);
+    
+    $pdf->Ln(10);
+    
+    // Encabezado de Productos (Gris oscuro para un toque premium)
+    $pdf->SetFillColor(30, 30, 30);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->SetDrawColor(30, 30, 30);
+    $pdf->SetFont('Arial', 'B', 10);
+    
+    $pdf->Cell(95, 10, 'Producto', 1, 0, 'C', true);
+    $pdf->Cell(25, 10, 'Cant.', 1, 0, 'C', true);
+    $pdf->Cell(35, 10, 'Precio Unit.', 1, 0, 'C', true);
+    $pdf->Cell(35, 10, 'Subtotal', 1, 1, 'C', true);
+    
+    // Items
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->SetTextColor($color_texto_oscuro[0], $color_texto_oscuro[1], $color_texto_oscuro[2]);
+    $pdf->SetDrawColor(220, 220, 220);
+    
+    $subtotal_items = 0;
+    
+    foreach ($items as $index => $item) {
+        $precio = isset($item['precio']) ? $item['precio'] : (isset($item['precio_unitario']) ? $item['precio_unitario'] : ($item['subtotal'] / $item['cantidad']));
+        $subtotal_items += $item['subtotal'];
+        
+        $fill = ($index % 2 == 0) ? false : true;
+        $pdf->SetFillColor(248, 248, 248);
+        
+        $pdf->Cell(95, 10, '  ' . utf8_decode($item['nombre']), 'L,R,B', 0, 'L', $fill);
+        $pdf->Cell(25, 10, $item['cantidad'], 'L,R,B', 0, 'C', $fill);
+        $pdf->Cell(35, 10, 'S/. ' . number_format($precio, 2), 'L,R,B', 0, 'C', $fill);
+        $pdf->Cell(35, 10, 'S/. ' . number_format($item['subtotal'], 2), 'L,R,B', 1, 'R', $fill);
+    }
+    
+    $pdf->Ln(8);
+    
+    // Calcular totales
+    $igv = $subtotal_items * (defined('TAX_RATE') ? TAX_RATE : 0.18);
+    $delivery = defined('DELIVERY_COST') ? DELIVERY_COST : 5.00;
+    $total_final = $subtotal_items + $igv + $delivery;
+    
+    // Tabla de Totales
+    $pdf->SetX(120); 
+    
+    // Subtotal
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->SetTextColor(100, 100, 100);
+    $pdf->Cell(50, 8, 'Subtotal:', 0, 0, 'R');
+    $pdf->SetTextColor($color_texto_oscuro[0], $color_texto_oscuro[1], $color_texto_oscuro[2]);
+    $pdf->Cell(30, 8, 'S/. ' . number_format($subtotal_items, 2), 0, 1, 'R');
+    
+    $pdf->SetX(120);
+    // IGV
+    $pdf->SetTextColor(100, 100, 100);
+    $pdf->Cell(50, 8, 'IGV (18%):', 0, 0, 'R');
+    $pdf->SetTextColor($color_texto_oscuro[0], $color_texto_oscuro[1], $color_texto_oscuro[2]);
+    $pdf->Cell(30, 8, 'S/. ' . number_format($igv, 2), 0, 1, 'R');
+    
+    $pdf->SetX(120);
+    // Delivery
+    $pdf->SetTextColor(100, 100, 100);
+    $pdf->Cell(50, 8, 'Delivery:', 0, 0, 'R');
+    $pdf->SetTextColor($color_texto_oscuro[0], $color_texto_oscuro[1], $color_texto_oscuro[2]);
+    $pdf->Cell(30, 8, 'S/. ' . number_format($delivery, 2), 0, 1, 'R');
+    
+    $pdf->Ln(2);
+    
+    // Total Final (Fondo rojo tenue o letras rojas)
+    $pdf->SetX(120);
+    $pdf->SetFont('Arial', 'B', 14);
+    $pdf->SetFillColor($color_primario[0], $color_primario[1], $color_primario[2]);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(50, 12, 'TOTAL A PAGAR:', 1, 0, 'R', true);
+    $pdf->Cell(30, 12, 'S/. ' . number_format($total_final, 2), 1, 1, 'R', true);
+    
+    $pdf->Ln(15);
+    
+    // Mensaje de Agradecimiento
+    $pdf->SetFont('Arial', 'I', 11);
+    $pdf->SetTextColor($color_primario[0], $color_primario[1], $color_primario[2]);
+    $pdf->Cell(0, 10, utf8_decode('¡Gracias por tu compra!'), 0, 1, 'C');
+    
+    $pdf->SetFont('Arial', '', 9);
+    $pdf->SetTextColor($color_texto_claro[0], $color_texto_claro[1], $color_texto_claro[2]);
+    $pdf->Cell(0, 5, utf8_decode('Los mejores sabores del mar, directo a tu mesa.'), 0, 1, 'C');
+    $pdf->Cell(0, 5, utf8_decode('Este documento es un comprobante electrónico válido.'), 0, 1, 'C');
+    
+    return $pdf->Output('S');
 }
 
 /**
- * Envía el voucher PDF al correo del cliente vía Gmail SMTP (PHPMailer).
- *
- * @param array  $pedido         Datos del pedido
- * @param array  $items          Productos del pedido
- * @param string $correo_cliente Email del destinatario
- * @param string $nombre_cliente Nombre del cliente para el saludo
- * @return array ['ok' => bool, 'error' => string|null]
+ * Genera el voucher PDF y lo envia por correo al cliente
+ * 
+ * @param array $datos_pedido
+ * @param array $items
+ * @param string $correo
+ * @param string $nombre
+ * @return array ['ok' => true/false, 'error' => string]
  */
-function enviar_voucher_email(array $pedido, array $items, string $correo_cliente, string $nombre_cliente): array
-{
-  try {
-    // 1. Generar PDF
-    $pdf_content = generar_pdf_voucher($pedido, $items);
+function enviar_voucher_email($datos_pedido, $items, $correo, $nombre) {
+    if (!defined('MAIL_ENABLED') || !MAIL_ENABLED) {
+        return ['ok' => false, 'error' => 'El envio de correos esta deshabilitado en config.php.'];
+    }
 
-    // 2. Configurar PHPMailer
+    if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+        return ['ok' => false, 'error' => 'La clase PHPMailer no esta disponible.'];
+    }
+
+    $pdf_content = generar_pdf_voucher($datos_pedido, $items);
+    if (empty($pdf_content)) {
+        return ['ok' => false, 'error' => 'No se pudo generar el PDF del voucher.'];
+    }
+    
+    $filename = 'Voucher_Pedido_' . str_pad($datos_pedido['id_pedido'], 6, '0', STR_PAD_LEFT) . '.pdf';
+
     $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host       = SMTP_HOST;
-    $mail->SMTPAuth   = true;
-    $mail->Username   = SMTP_USER;
-    $mail->Password   = SMTP_PASS;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port       = (int) SMTP_PORT;
-    $mail->CharSet    = PHPMailer::CHARSET_UTF8;
-    $mail->Encoding   = PHPMailer::ENCODING_BASE64;
 
-    // Timeout generoso para evitar errores de conexión
-    $mail->Timeout = 30;
-
-    // 3. Remitente y destinatario
-    $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
-    $mail->addAddress($correo_cliente, $nombre_cliente);
-
-    // Copia oculta al restaurante (no mostrar al cliente)
-    if (defined('NOTIFICATION_RECIPIENT_EMAIL_ADMIN') && NOTIFICATION_RECIPIENT_EMAIL_ADMIN !== $correo_cliente) {
-      $mail->addBCC(NOTIFICATION_RECIPIENT_EMAIL_ADMIN, 'Restaurante Brisamar Admin');
+    if (defined('MAIL_DEBUG') && MAIL_DEBUG) {
+        $mail->SMTPDebug = 2;
+        $mail->Debugoutput = function($str, $level) {
+            error_log("PHPMailer debug (level {$level}): {$str}");
+        };
     }
 
-    // 4. Adjuntar PDF en memoria
-    $nombre_archivo = 'Voucher_Brisamar_' . str_pad($pedido['id_pedido'], 6, '0', STR_PAD_LEFT) . '.pdf';
-    $mail->addStringAttachment($pdf_content, $nombre_archivo, PHPMailer::ENCODING_BASE64, 'application/pdf');
+    try {
+        // Configuracion SMTP
+        $mail->isSMTP();
+        $mail->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = defined('SMTP_USER') ? SMTP_USER : '';
+        $mail->Password   = defined('SMTP_PASS') ? SMTP_PASS : '';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = defined('SMTP_PORT') ? SMTP_PORT : 587;
+        
+        $mail->CharSet = 'UTF-8';
 
-    // 5. Asunto
-    $mail->Subject = '🎉 Tu pedido #' . str_pad($pedido['id_pedido'], 6, '0', STR_PAD_LEFT) . ' ha sido confirmado - Restaurante Brisamar';
+        // Evitar problemas de certificado en local (XAMPP)
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ];
 
-    // 6. Construir tabla HTML de productos
-    $items_html = '';
-    foreach ($items as $it) {
-      $items_html .= sprintf(
-        '<tr>
-                    <td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#fff;">%s</td>
-                    <td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#fff;text-align:center;">%d</td>
-                    <td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#fff;text-align:right;">S/ %s</td>
-                    <td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#c8102e;text-align:right;font-weight:700;">S/ %s</td>
-                </tr>',
-        htmlspecialchars((string)$it['nombre']),
-        (int)$it['cantidad'],
-        number_format((float)$it['precio'], 2),
-        number_format((float)$it['subtotal'], 2)
-      );
+        // Remitente y Destinatario
+        $mail_from = defined('MAIL_FROM') ? MAIL_FROM : 'admin@restaurante.com';
+        $mail_from_name = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : SITE_NAME;
+        $mail->setFrom($mail_from, $mail_from_name);
+        $mail->addAddress($correo, $nombre);
+        
+        // Copia oculta al admin si existe config
+        if (defined('NOTIFICATION_RECIPIENT_EMAIL_ADMIN')) {
+            $mail->addBCC(NOTIFICATION_RECIPIENT_EMAIL_ADMIN);
+        }
+
+        // Adjuntos
+        $mail->addStringAttachment($pdf_content, $filename);
+
+        // Contenido del email
+        $mail->isHTML(true);
+        $mail->Subject = 'Su pedido en ' . SITE_NAME . ' (Voucher adjunto) #' . str_pad($datos_pedido['id_pedido'], 6, '0', STR_PAD_LEFT);
+        $mail->Body    = "Hola <b>" . htmlspecialchars($nombre) . "</b>,<br><br>" .
+                         "Gracias por su preferencia. Adjuntamos el voucher de su pedido en formato PDF.<br><br>" .
+                         "Atentamente,<br><b>" . SITE_NAME . "</b>";
+
+        $mail->send();
+        return ['ok' => true, 'error' => ''];
+    } catch (Exception $e) {
+        return ['ok' => false, 'error' => $mail->ErrorInfo];
+    }
+}
+
+/**
+ * Genera el correo HTML y lo envia con el código de verificación
+ * 
+ * @param string $correo
+ * @param string $nombre
+ * @param string $codigo
+ * @return array ['ok' => true/false, 'error' => string]
+ */
+function enviar_codigo_verificacion_email($correo, $nombre, $codigo) {
+    if (!defined('MAIL_ENABLED') || !MAIL_ENABLED) {
+        return ['ok' => false, 'error' => 'El envio de correos esta deshabilitado.'];
     }
 
-    $fecha_legible = !empty($pedido['fecha'])
-      ? date('d/m/Y H:i', strtotime($pedido['fecha']))
-      : date('d/m/Y H:i');
+    if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+        return ['ok' => false, 'error' => 'La clase PHPMailer no esta disponible.'];
+    }
 
-    $nombre_esc    = htmlspecialchars($nombre_cliente);
-    $id_fmt        = str_pad((int)$pedido['id_pedido'], 6, '0', STR_PAD_LEFT);
-    $total_fmt     = number_format((float)$pedido['total'], 2);
-    $pago_lbl      = ucfirst($pedido['metodo_pago_label'] ?? $pedido['metodo_pago'] ?? 'efectivo');
-    $direccion_esc = htmlspecialchars($pedido['direccion'] ?? '');
+    $mail = new PHPMailer(true);
 
-    // 7. Cuerpo HTML del correo
-    $mail->isHTML(true);
-    $mail->Body = <<<HTML
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Pedido Confirmado - Restaurante Brisamar</title>
-</head>
-<body style="margin:0;padding:0;background:#0d0d0d;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;padding:30px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#1a1a1a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
+    try {
+        // Configuracion SMTP
+        $mail->isSMTP();
+        $mail->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = defined('SMTP_USER') ? SMTP_USER : '';
+        $mail->Password   = defined('SMTP_PASS') ? SMTP_PASS : '';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = defined('SMTP_PORT') ? SMTP_PORT : 587;
+        $mail->CharSet    = 'UTF-8';
 
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#c8102e 0%,#8b0000 100%);padding:36px 32px;text-align:center;">
-            <div style="font-size:32px;margin-bottom:8px;">🦞</div>
-            <h1 style="margin:0;color:#fff;font-size:24px;font-weight:900;letter-spacing:1px;">RESTAURANTE BRISAMAR</h1>
-            <p style="margin:8px 0 0;color:rgba(255,255,255,.7);font-size:13px;">Los mejores sabores del mar, directo a tu mesa</p>
-          </td>
-        </tr>
+        // Evitar problemas de certificado en local (XAMPP)
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ];
 
-        <!-- Confirmación -->
-        <tr>
-          <td style="padding:28px 32px 16px;">
-            <div style="background:#111;border:1px solid #2a2a2a;border-radius:12px;padding:20px 24px;text-align:center;">
-              <div style="font-size:44px;margin-bottom:8px;">✅</div>
-              <h2 style="margin:0;color:#fff;font-size:20px;">¡Pedido Confirmado!</h2>
-              <p style="margin:10px 0 0;color:rgba(255,255,255,.55);font-size:13px;">
-                Hola <strong style="color:#fff;">{$nombre_esc}</strong>, tu pedido ha sido registrado exitosamente.
-              </p>
+        $mail_from = defined('MAIL_FROM') ? MAIL_FROM : 'admin@restaurante.com';
+        $mail_from_name = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : SITE_NAME;
+        
+        $mail->setFrom($mail_from, $mail_from_name);
+        $mail->addAddress($correo, $nombre);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Tu Código de Verificación - ' . SITE_NAME;
+        
+        // Diseño HTML Llamativo
+        $html = "
+        <!DOCTYPE html>
+        <html lang='es'>
+        <head>
+            <meta charset='UTF-8'>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>Código de Verificación</title>
+            <style>
+                body {
+                    background-color: #111111;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    color: #ffffff;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #1a1a1a;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    border-top: 5px solid #c8102e;
+                }
+                .logo {
+                    text-align: center;
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #c8102e;
+                    margin-bottom: 20px;
+                    letter-spacing: 2px;
+                }
+                .content {
+                    background-color: #222222;
+                    padding: 25px;
+                    border-radius: 6px;
+                    text-align: center;
+                }
+                .title {
+                    font-size: 22px;
+                    margin-top: 0;
+                    color: #ffffff;
+                }
+                .text {
+                    color: #aaaaaa;
+                    font-size: 16px;
+                    line-height: 1.5;
+                }
+                .code-box {
+                    background-color: #111111;
+                    border: 2px dashed #c8102e;
+                    color: #ffffff;
+                    font-size: 32px;
+                    font-weight: bold;
+                    letter-spacing: 8px;
+                    padding: 15px 10px;
+                    margin: 30px auto;
+                    width: 250px;
+                    border-radius: 8px;
+                }
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    color: #777777;
+                    font-size: 12px;
+                }
+            </style>
+        </head>
+        <body>
+            <div style='background-color:#111; padding:40px 10px;'>
+                <div class='container'>
+                    <div class='logo'>" . strtoupper(SITE_NAME) . "</div>
+                    <div class='content'>
+                        <h2 class='title'>¡Hola " . htmlspecialchars($nombre) . "!</h2>
+                        <p class='text'>Has solicitado un código de verificación para tu cuenta. Utiliza el siguiente código para completar el proceso:</p>
+                        
+                        <div class='code-box'>" . htmlspecialchars($codigo) . "</div>
+                        
+                        <p class='text'>Este código expirará en 15 minutos. Si no solicitaste este código, por favor ignora este mensaje.</p>
+                    </div>
+                    <div class='footer'>
+                        <p>&copy; " . date('Y') . " " . SITE_NAME . ". Todos los derechos reservados.</p>
+                        <p>Los mejores sabores del mar, directo a tu mesa.</p>
+                    </div>
+                </div>
             </div>
-          </td>
-        </tr>
+        </body>
+        </html>";
 
-        <!-- Número de pedido -->
-        <tr>
-          <td style="padding:0 32px 20px;">
-            <div style="background:#111;border:2px solid #c8102e;border-radius:12px;padding:16px;text-align:center;">
-              <div style="color:rgba(255,255,255,.4);font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;">Número de Pedido</div>
-              <div style="color:#fff;font-size:30px;font-weight:900;letter-spacing:3px;margin-top:6px;"># {$id_fmt}</div>
-              <div style="color:rgba(255,255,255,.35);font-size:12px;margin-top:4px;">{$fecha_legible}</div>
+        $mail->Body = $html;
+        $mail->AltBody = "Hola $nombre, tu código de verificación es: $codigo . Este código expirará en 15 minutos.";
+
+        $mail->send();
+        return ['ok' => true, 'error' => ''];
+    } catch (Exception $e) {
+        return ['ok' => false, 'error' => $mail->ErrorInfo];
+    }
+}
+
+/**
+ * Envia el código de recuperación de contraseña por email usando PHPMailer y la plantilla oficial
+ */
+function enviar_codigo_recuperacion_password(string $correo, string $codigo, string $nombre) {
+    if (!defined('MAIL_ENABLED') || !MAIL_ENABLED) {
+        return ['ok' => false, 'error' => 'Servicio de correo desactivado en config.php'];
+    }
+
+    $mail = new PHPMailer(true);
+
+    try {
+        $mail->isSMTP();
+        $mail->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = defined('SMTP_USER') ? SMTP_USER : '';
+        $mail->Password   = defined('SMTP_PASS') ? SMTP_PASS : '';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = defined('SMTP_PORT') ? SMTP_PORT : 587;
+        $mail->CharSet    = 'UTF-8';
+
+        // Evitar problemas de certificado en local (XAMPP)
+        $mail->SMTPOptions = [
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ];
+
+        $mail_from = defined('MAIL_FROM') ? MAIL_FROM : 'admin@restaurante.com';
+        $mail_from_name = defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : SITE_NAME;
+        
+        $mail->setFrom($mail_from, $mail_from_name);
+        $mail->addAddress($correo, $nombre);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Recuperación de Contraseña - ' . SITE_NAME;
+
+        $html = "<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    background-color: #111111;
+                    color: #ffffff;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #1a1a1a;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                    border-top: 5px solid #dc2626;
+                }
+                .logo {
+                    text-align: center;
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #dc2626;
+                    margin-bottom: 20px;
+                    letter-spacing: 2px;
+                }
+                .content {
+                    background-color: #222222;
+                    padding: 25px;
+                    border-radius: 6px;
+                    text-align: center;
+                }
+                .title {
+                    font-size: 22px;
+                    margin-top: 0;
+                    color: #ffffff;
+                }
+                .text {
+                    color: #aaaaaa;
+                    font-size: 16px;
+                    line-height: 1.5;
+                }
+                .code-box {
+                    background-color: #111111;
+                    border: 2px dashed #dc2626;
+                    color: #ffffff;
+                    font-size: 32px;
+                    font-weight: bold;
+                    letter-spacing: 8px;
+                    padding: 15px 10px;
+                    margin: 30px auto;
+                    width: 250px;
+                    border-radius: 8px;
+                }
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    color: #777777;
+                    font-size: 12px;
+                }
+            </style>
+        </head>
+        <body>
+            <div style='background-color:#111; padding:40px 10px;'>
+                <div class='container'>
+                    <div class='logo'>" . strtoupper(SITE_NAME) . "</div>
+                    <div class='content'>
+                        <h2 class='title'>¡Hola " . htmlspecialchars($nombre) . "!</h2>
+                        <p class='text'>Has solicitado restablecer tu contraseña. Utiliza el siguiente código para completar el proceso:</p>
+                        
+                        <div class='code-box'>" . htmlspecialchars($codigo) . "</div>
+                        
+                        <p class='text'>Este código expirará en 15 minutos. Si no solicitaste restablecer tu contraseña, puedes ignorar este mensaje de forma segura.</p>
+                    </div>
+                    <div class='footer'>
+                        <p>&copy; " . date('Y') . " " . SITE_NAME . ". Todos los derechos reservados.</p>
+                        <p>Los mejores sabores del mar, directo a tu mesa.</p>
+                    </div>
+                </div>
             </div>
-          </td>
-        </tr>
+        </body>
+        </html>";
 
-        <!-- Tabla de productos -->
-        <tr>
-          <td style="padding:0 32px 8px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #2a2a2a;border-radius:10px;overflow:hidden;">
-              <tr style="background:#c8102e;">
-                <th style="padding:10px 14px;color:#fff;font-size:11px;text-align:left;font-weight:700;">PRODUCTO</th>
-                <th style="padding:10px 14px;color:#fff;font-size:11px;text-align:center;font-weight:700;">CANT.</th>
-                <th style="padding:10px 14px;color:#fff;font-size:11px;text-align:right;font-weight:700;">P. UNIT.</th>
-                <th style="padding:10px 14px;color:#fff;font-size:11px;text-align:right;font-weight:700;">SUBTOTAL</th>
-              </tr>
-              {$items_html}
-            </table>
-          </td>
-        </tr>
+        $mail->Body = $html;
+        $mail->AltBody = "Hola $nombre, tu código de recuperación de contraseña es: $codigo . Este código expirará en 15 minutos. Si no fuiste tú, ignora este mensaje.";
 
-        <!-- Resumen -->
-        <tr>
-          <td style="padding:12px 32px 24px;">
-            <table width="100%" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:7px 0;color:rgba(255,255,255,.5);font-size:13px;">Método de pago</td>
-                <td style="padding:7px 0;color:#fff;font-size:13px;text-align:right;font-weight:600;">{$pago_lbl}</td>
-              </tr>
-              <tr>
-                <td style="padding:7px 0;color:rgba(255,255,255,.5);font-size:13px;">Dirección de entrega</td>
-                <td style="padding:7px 0;color:#fff;font-size:13px;text-align:right;font-weight:600;">{$direccion_esc}</td>
-              </tr>
-              <tr style="border-top:1px solid #2a2a2a;">
-                <td style="padding:14px 0 4px;color:#fff;font-size:15px;font-weight:900;">TOTAL PAGADO</td>
-                <td style="padding:14px 0 4px;color:#c8102e;font-size:22px;font-weight:900;text-align:right;">S/ {$total_fmt}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Nota adjunto -->
-        <tr>
-          <td style="padding:0 32px 28px;">
-            <div style="background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.3);border-radius:10px;padding:14px 18px;text-align:center;">
-              <p style="margin:0;color:rgba(255,255,255,.75);font-size:12px;">
-                📎 <strong style="color:#fff;">Tu voucher PDF está adjunto</strong> a este correo.
-                Guárdalo como constancia de tu pedido.
-              </p>
-            </div>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#111;padding:20px 32px;text-align:center;border-top:1px solid #2a2a2a;">
-            <p style="margin:0;color:rgba(255,255,255,.3);font-size:11px;">
-              Restaurante Brisamar &bull; RestaurantesBrisamar@gmail.com &bull; +51 917 328 085
-            </p>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,.2);font-size:10px;">
-              Este correo fue generado automáticamente. Por favor no respondas directamente.
-            </p>
-          </td>
-        </tr>
-
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>
-HTML;
-
-    // Versión texto plano (fallback)
-    $mail->AltBody = "Pedido #{$id_fmt} confirmado - Restaurante Brisamar\n"
-      . "Cliente: {$nombre_cliente}\n"
-      . "Total: S/ {$total_fmt}\n"
-      . "Tu voucher PDF está adjunto a este correo.";
-
-    $mail->send();
-    return ['ok' => true, 'error' => null];
-  } catch (MailerException $e) {
-    return ['ok' => false, 'error' => isset($mail) ? $mail->ErrorInfo : $e->getMessage()];
-  } catch (\Exception $e) {
-    return ['ok' => false, 'error' => $e->getMessage()];
-  }
+        $mail->send();
+        return ['ok' => true, 'error' => ''];
+    } catch (Exception $e) {
+        return ['ok' => false, 'error' => $mail->ErrorInfo];
+    }
 }
